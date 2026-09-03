@@ -4,4 +4,4 @@ opencv-python
 ultralytics
 pymongo
 pytesseract
-numpy
+numpypython-multipart
