@@ -1,1116 +1,2592 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking</title>
 
-    <title>Smart Parking System</title>
+    <!-- Professional font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <style>
 
+        /* =========================================================
+           GLOBAL
+        ========================================================= */
+
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #060908;
+            --background-soft: #0a0e0c;
+
+            --glass: rgba(255, 255, 255, 0.045);
+            --glass-hover: rgba(255, 255, 255, 0.065);
+
+            --border: rgba(255, 255, 255, 0.085);
+            --border-light: rgba(255, 255, 255, 0.12);
+
+            --text: #f4f7f5;
+            --text-secondary: #a1aaa5;
+            --text-muted: #68736e;
+
+            --accent: #b8ff3d;
+            --accent-soft: rgba(184, 255, 61, 0.10);
+            --accent-border: rgba(184, 255, 61, 0.20);
+
+            --danger: #ff5969;
+            --danger-soft: rgba(255, 89, 105, 0.10);
+
+            --warning: #f5c451;
+            --warning-soft: rgba(245, 196, 81, 0.10);
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            background: #f4f6f8;
-            color: #222;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(
+                    circle at 10% 0%,
+                    rgba(184, 255, 61, 0.075),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 95% 100%,
+                    rgba(74, 145, 105, 0.08),
+                    transparent 30%
+                ),
+                var(--background);
+
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        header {
-            background: #1f2937;
-            color: white;
-            padding: 20px 30px;
+        /* =========================================================
+           BACKGROUND EFFECTS
+        ========================================================= */
+
+        .background-glow {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: rgba(184, 255, 61, 0.035);
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: -1;
+            animation: floatingGlow 14s ease-in-out infinite alternate;
         }
 
-        header h1 {
-            font-size: 28px;
+        .glow-one {
+            top: -220px;
+            left: -120px;
         }
 
-        header p {
-            margin-top: 5px;
-            opacity: 0.8;
+        .glow-two {
+            right: -220px;
+            bottom: -220px;
+            animation-delay: 5s;
         }
 
-        .container {
-            padding: 30px;
-            max-width: 1400px;
-            margin: auto;
+        @keyframes floatingGlow {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(80px, 50px);
+            }
         }
 
-        /* CAMERA CONTROLS */
+        /* =========================================================
+           LAYOUT
+        ========================================================= */
 
-        .camera-controls {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
+        .app {
+            min-height: 100vh;
+        }
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+
+            width: 245px;
+            height: 100vh;
+
+            padding: 25px 17px;
+
+            background: rgba(5, 8, 7, 0.72);
+            border-right: 1px solid var(--border);
+
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+
+            z-index: 100;
+        }
+
+        /* Logo */
+
+        .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            gap: 12px;
+
+            padding: 6px 10px 34px;
         }
 
-        .camera-controls button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-        }
+        .logo-icon {
+            width: 39px;
+            height: 39px;
 
-        .start-button {
-            background: #22c55e;
-            color: white;
-        }
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-        .stop-button {
-            background: #ef4444;
-            color: white;
-        }
-
-        .camera-status {
-            font-weight: bold;
-        }
-
-        /* STATISTICS */
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns:
-                repeat(4, 1fr);
-
-            gap: 20px;
-
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 25px;
             border-radius: 12px;
+
+            background: var(--accent);
+            color: #081000;
+
             box-shadow:
-                0 2px 8px
-                rgba(0, 0, 0, 0.08);
+                0 0 25px rgba(184, 255, 61, 0.18);
         }
 
-        .stat-card h3 {
-            color: #6b7280;
-            font-size: 15px;
+        .logo-icon svg {
+            width: 21px;
+            height: 21px;
+        }
+
+        .logo-name {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+        }
+
+        /* Navigation */
+
+        .navigation-title {
+            padding: 0 12px;
             margin-bottom: 10px;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 600;
+
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: bold;
+        .navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        /* MAIN GRID */
+        .navigation-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
 
-        .main-grid {
-            display: grid;
+            padding: 12px 13px;
 
-            grid-template-columns:
-                2fr 1fr;
+            border-radius: 11px;
 
-            gap: 25px;
+            color: var(--text-secondary);
+
+            font-size: 12px;
+            font-weight: 500;
+
+            cursor: pointer;
+
+            transition:
+                background 0.25s ease,
+                color 0.25s ease,
+                transform 0.25s ease;
         }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
+        .navigation-item svg {
+            width: 17px;
+            height: 17px;
 
-            box-shadow:
-                0 2px 8px
-                rgba(0, 0, 0, 0.08);
-
-            margin-bottom: 25px;
+            stroke-width: 1.8;
         }
 
-        .card h2 {
-            margin-bottom: 20px;
+        .navigation-item:hover {
+            background: rgba(255, 255, 255, 0.045);
+            color: var(--text);
+            transform: translateX(2px);
         }
 
-        /* PARKING SLOTS */
+        .navigation-item.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
 
-        .parking-grid {
-            display: grid;
+        /* Sidebar bottom */
 
-            grid-template-columns:
-                repeat(5, 1fr);
+        .sidebar-bottom {
+            position: absolute;
 
+            left: 17px;
+            right: 17px;
+            bottom: 20px;
+
+            padding: 15px;
+
+            border-radius: 15px;
+
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--border);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            color: var(--text-secondary);
+
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: var(--accent);
+
+            box-shadow: 0 0 12px rgba(184, 255, 61, 0.75);
+
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.45;
+                transform: scale(0.75);
+            }
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .main {
+            margin-left: 245px;
+
+            width: calc(100% - 245px);
+
+            padding: 30px;
+        }
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 26px;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -1px;
+        }
+
+        .header-left p {
+            margin-top: 6px;
+
+            color: var(--text-muted);
+
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
             gap: 12px;
         }
 
-        .parking-slot {
-            padding: 20px 10px;
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 8px 12px;
+
+            border-radius: 30px;
+
+            color: var(--accent);
+
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+
+            font-size: 9px;
+            font-weight: 600;
+
+            letter-spacing: 0.8px;
+        }
+
+        .clock {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        /* =========================================================
+           GLASS CARD
+        ========================================================= */
+
+        .glass {
+            background: var(--glass);
+
+            border: 1px solid var(--border);
+
+            border-radius: 20px;
+
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.025),
+                0 20px 55px rgba(0, 0, 0, 0.16);
+
+            transition:
+                border-color 0.3s ease,
+                transform 0.3s ease,
+                background 0.3s ease;
+        }
+
+        .glass:hover {
+            background: var(--glass-hover);
+            border-color: rgba(255, 255, 255, 0.12);
+
+            transform: translateY(-2px);
+        }
+
+        /* =========================================================
+           STATISTICS
+        ========================================================= */
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+
+            gap: 14px;
+
+            margin-bottom: 14px;
+        }
+
+        .stat-card {
+            position: relative;
+
+            padding: 20px;
+
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: "";
+
+            position: absolute;
+
+            width: 90px;
+            height: 90px;
+
+            right: -35px;
+            bottom: -35px;
+
+            border-radius: 50%;
+
+            background: rgba(184, 255, 61, 0.055);
+
+            filter: blur(20px);
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 600;
+
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stat-icon {
+            width: 30px;
+            height: 30px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background: rgba(255, 255, 255, 0.045);
+            color: var(--text-secondary);
+        }
+
+        .stat-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .stat-number {
+            margin-top: 13px;
+
+            font-size: 30px;
+            font-weight: 700;
+
+            letter-spacing: -1px;
+        }
+
+        .stat-number.accent {
+            color: var(--accent);
+        }
+
+        .stat-description {
+            margin-top: 5px;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+        }
+
+        /* =========================================================
+           DASHBOARD GRID
+        ========================================================= */
+
+        .dashboard-grid {
+            display: grid;
+
+            grid-template-columns: 1.45fr 1fr;
+
+            gap: 14px;
+        }
+
+        .card {
+            padding: 21px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+
+            letter-spacing: -0.2px;
+        }
+
+        .card-description {
+            margin-top: 4px;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+        }
+
+        .card-badge {
+            padding: 6px 9px;
+
+            border-radius: 7px;
+
+            color: var(--text-muted);
+
+            background: rgba(255, 255, 255, 0.035);
+
+            font-size: 8px;
+            font-weight: 600;
+
+            letter-spacing: 0.6px;
+        }
+
+        /* =========================================================
+           CAMERA
+        ========================================================= */
+
+        .camera-card {
+            position: relative;
+
+            min-height: 350px;
+
+            padding: 0;
+
+            overflow: hidden;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(18, 30, 24, 0.85),
+                    rgba(4, 8, 6, 0.97)
+                );
+        }
+
+        .camera-grid {
+            position: absolute;
+
+            inset: 0;
+
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.018) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.018) 1px,
+                    transparent 1px
+                );
+
+            background-size: 44px 44px;
+        }
+
+        .camera-scan {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+
+            height: 1px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(184, 255, 61, 0.7),
+                    transparent
+                );
+
+            box-shadow:
+                0 0 14px rgba(184, 255, 61, 0.5);
+
+            opacity: 0.55;
+
+            animation: scanCamera 5s linear infinite;
+        }
+
+        @keyframes scanCamera {
+
+            from {
+                top: 0;
+            }
+
+            to {
+                top: 100%;
+            }
+
+        }
+
+        .camera-label {
+            position: absolute;
+
+            top: 15px;
+            left: 15px;
+
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 7px 9px;
 
             border-radius: 8px;
 
+            background: rgba(0, 0, 0, 0.4);
+
+            backdrop-filter: blur(12px);
+
+            color: var(--accent);
+
+            font-size: 8px;
+            font-weight: 600;
+
+            letter-spacing: 0.8px;
+        }
+
+        .camera-label svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .camera-center {
+            position: absolute;
+
+            inset: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-icon {
+            width: 54px;
+            height: 54px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            margin-bottom: 13px;
+
+            border-radius: 16px;
+
+            color: rgba(255, 255, 255, 0.28);
+
+            background: rgba(255, 255, 255, 0.035);
+
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .camera-icon svg {
+            width: 25px;
+            height: 25px;
+        }
+
+        .camera-message {
+            color: var(--text-muted);
+
+            font-size: 10px;
+        }
+
+        .camera-controls {
+            position: absolute;
+
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Buttons */
+
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+
+            padding: 9px 13px;
+
+            border-radius: 9px;
+
+            font-family: inherit;
+
+            font-size: 9px;
+            font-weight: 600;
+
+            transition: 0.25s ease;
+
+            cursor: pointer;
+        }
+
+        .button svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .button-primary {
+            background: var(--accent);
+            color: #071000;
+        }
+
+        .button-primary:hover {
+            box-shadow: 0 0 22px rgba(184, 255, 61, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .button-secondary {
+            color: var(--text-secondary);
+
+            background: rgba(255, 255, 255, 0.055);
+
+            border: 1px solid var(--border);
+        }
+
+        .button-secondary:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* =========================================================
+           PARKING MAP
+        ========================================================= */
+
+        .parking-card {
+            min-height: 350px;
+        }
+
+        .parking-map {
+            display: grid;
+
+            grid-template-columns: repeat(4, 1fr);
+
+            gap: 9px;
+        }
+
+        .parking-slot {
+            aspect-ratio: 1.15;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 11px;
+
+            border: 1px solid rgba(184, 255, 61, 0.15);
+
+            background: rgba(184, 255, 61, 0.045);
+
+            transition:
+                transform 0.25s ease,
+                border-color 0.25s ease,
+                background 0.25s ease;
+        }
+
+        .parking-slot:hover {
+            transform: scale(1.035);
+
+            border-color: rgba(184, 255, 61, 0.45);
+
+            background: rgba(184, 255, 61, 0.075);
+        }
+
+        .parking-slot.occupied {
+            border-color: rgba(255, 89, 105, 0.30);
+
+            background: rgba(255, 89, 105, 0.06);
+        }
+
+        .parking-slot.occupied:hover {
+            border-color: rgba(255, 89, 105, 0.55);
+        }
+
+        .slot-number {
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .slot-status {
+            margin-top: 5px;
+
+            color: var(--accent);
+
+            font-size: 7px;
+            font-weight: 600;
+
+            letter-spacing: 0.5px;
+        }
+
+        .occupied .slot-status {
+            color: var(--danger);
+        }
+
+        .parking-empty {
+            grid-column: 1 / -1;
+
+            padding: 50px 10px;
+
+            color: var(--text-muted);
+
             text-align: center;
 
-            font-weight: bold;
-
-            border: 2px solid #ddd;
+            font-size: 9px;
         }
 
-        .slot-free {
-            background: #dcfce7;
-            border-color: #22c55e;
+        /* Legend */
+
+        .legend {
+            display: flex;
+            gap: 15px;
+
+            margin-top: 16px;
         }
 
-        .slot-occupied {
-            background: #fee2e2;
-            border-color: #ef4444;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            color: var(--text-muted);
+
+            font-size: 8px;
         }
 
-        /* PREDICTION */
+        .legend-dot {
+            width: 6px;
+            height: 6px;
 
-        .prediction-box {
+            border-radius: 50%;
+        }
+
+        .legend-free {
+            background: var(--accent);
+            box-shadow: 0 0 7px rgba(184, 255, 61, 0.5);
+        }
+
+        .legend-occupied {
+            background: var(--danger);
+        }
+
+        /* =========================================================
+           PREDICTION
+        ========================================================= */
+
+        .prediction-card {
+            min-height: 185px;
+        }
+
+        .prediction-number {
+            font-size: 36px;
+            font-weight: 700;
+
+            letter-spacing: -1.5px;
+
+            color: var(--accent);
+        }
+
+        .prediction-unit {
+            margin-left: 5px;
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+        }
+
+        .prediction-bar {
+            height: 6px;
+
+            margin-top: 17px;
+
+            overflow: hidden;
+
+            border-radius: 10px;
+
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .prediction-fill {
+            width: 68%;
+            height: 100%;
+
+            border-radius: inherit;
+
+            background: var(--accent);
+
+            box-shadow: 0 0 14px rgba(184, 255, 61, 0.35);
+
+            animation: predictionGrow 1.3s ease;
+        }
+
+        @keyframes predictionGrow {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 68%;
+            }
+        }
+
+        .prediction-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-top: 10px;
+
+            color: var(--text-muted);
+
+            font-size: 8px;
+        }
+
+        /* =========================================================
+           SECURITY
+        ========================================================= */
+
+        .security-card {
+            min-height: 185px;
+        }
+
+        .security-grid {
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 8px;
+        }
+
+        .security-item {
+            padding: 13px 8px;
+
             text-align: center;
-            padding: 20px;
+
+            border-radius: 11px;
+
+            background: rgba(255, 255, 255, 0.03);
+
+            border: 1px solid rgba(255, 255, 255, 0.035);
         }
 
-        .prediction-value {
-            font-size: 40px;
-            font-weight: bold;
-            margin: 15px 0;
+        .security-number {
+            font-size: 20px;
+            font-weight: 700;
         }
 
-        .prediction-model {
-            color: #6b7280;
+        .security-label {
+            margin-top: 4px;
+
+            color: var(--text-muted);
+
+            font-size: 7px;
+            font-weight: 600;
+
+            letter-spacing: 0.5px;
         }
 
-        /* VEHICLE TABLE */
+        .security-alert {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            margin-top: 11px;
+
+            padding: 9px 10px;
+
+            border-radius: 9px;
+
+            color: #df9ca4;
+
+            background: var(--danger-soft);
+
+            border: 1px solid rgba(255, 89, 105, 0.12);
+
+            font-size: 8px;
+        }
+
+        .security-alert svg {
+            width: 13px;
+            height: 13px;
+
+            color: var(--danger);
+        }
+
+        /* =========================================================
+           VEHICLES
+        ========================================================= */
+
+        .vehicles-card {
+            grid-column: 1 / -1;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
 
         table {
             width: 100%;
+
             border-collapse: collapse;
         }
 
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
         th {
-            background: #f9fafb;
+            padding: 10px;
+
+            color: var(--text-muted);
+
+            text-align: left;
+
+            font-size: 8px;
+            font-weight: 600;
+
+            letter-spacing: 0.8px;
+
+            text-transform: uppercase;
+
+            border-bottom: 1px solid var(--border);
         }
 
-        /* SECURITY */
+        td {
+            padding: 12px 10px;
 
-        .security-item {
-            padding: 15px;
+            color: var(--text-secondary);
 
-            border-radius: 8px;
+            font-size: 9px;
 
-            margin-bottom: 10px;
-
-            background: #f9fafb;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.035);
         }
 
-        .security-safe {
-            border-left: 5px solid #22c55e;
+        tr:last-child td {
+            border-bottom: none;
         }
 
-        .security-danger {
-            border-left: 5px solid #ef4444;
+        .plate {
+            display: inline-block;
+
+            padding: 5px 8px;
+
+            border-radius: 6px;
+
+            color: var(--accent);
+
+            background: rgba(184, 255, 61, 0.05);
+
+            font-family: monospace;
+
+            font-size: 9px;
+            font-weight: 600;
         }
 
-        /* RESPONSIVE */
+        .authorized {
+            color: var(--accent);
+        }
 
-        @media (max-width: 900px) {
+        .unauthorized {
+            color: var(--danger);
+        }
 
-            .stats-grid {
-                grid-template-columns:
-                    repeat(2, 1fr);
+        .empty-table {
+            padding: 30px !important;
+
+            color: var(--text-muted) !important;
+
+            text-align: center;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 1100px) {
+
+            .sidebar {
+                width: 205px;
             }
 
-            .main-grid {
+            .main {
+                margin-left: 205px;
+
+                width: calc(100% - 205px);
+            }
+
+            .statistics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-grid {
                 grid-template-columns: 1fr;
             }
 
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 750px) {
 
-            .stats-grid {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0;
+
+                padding: 18px;
+            }
+
+            .header {
+                align-items: flex-start;
+            }
+
+            .header-left h1 {
+                font-size: 23px;
+            }
+
+            .header-right {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 7px;
+            }
+
+            .statistics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .parking-map {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+        }
+
+        @media (max-width: 450px) {
+
+            .statistics {
                 grid-template-columns: 1fr;
             }
 
-            .parking-grid {
-                grid-template-columns:
-                    repeat(2, 1fr);
+            .security-grid {
+                grid-template-columns: 1fr;
             }
 
-            .container {
-                padding: 15px;
+            .parking-map {
+                grid-template-columns: repeat(2, 1fr);
             }
 
         }
 
     </style>
-
 </head>
 
 
 <body>
 
+    <!-- Background -->
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
 
-<header>
 
-    <h1>
-        🚗 Smart Parking System
-    </h1>
+    <div class="app">
 
-    <p>
-        AI-powered parking management
-        and vehicle security
-    </p>
 
-</header>
+        <!-- =====================================================
+             SIDEBAR
+        ====================================================== -->
 
+        <aside class="sidebar">
 
-<div class="container">
+            <div class="logo">
 
+                <div class="logo-icon">
 
-    <!-- CAMERA CONTROLS -->
+                    <!-- Parking icon -->
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M7 20V4h6a4 4 0 0 1 0 8H7"/>
+                    </svg>
 
-    <div class="camera-controls">
+                </div>
 
-        <button
-            class="start-button"
-            onclick="startCamera()">
-
-            Start Camera
-
-        </button>
-
-
-        <button
-            class="stop-button"
-            onclick="stopCamera()">
-
-            Stop Camera
-
-        </button>
-
-
-        <span
-            class="camera-status"
-            id="cameraStatus">
-
-            Camera: OFF
-
-        </span>
-
-    </div>
-
-
-    <!-- STATISTICS -->
-
-    <div class="stats-grid">
-
-
-        <div class="stat-card">
-
-            <h3>
-                Total Parking Slots
-            </h3>
-
-            <div
-                class="value"
-                id="totalSlots">
-
-                0
-
-            </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-            <h3>
-                Available Slots
-            </h3>
-
-            <div
-                class="value"
-                id="availableSlots">
-
-                0
-
-            </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-            <h3>
-                Occupied Slots
-            </h3>
-
-            <div
-                class="value"
-                id="occupiedSlots">
-
-                0
-
-            </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-            <h3>
-                Occupancy Rate
-            </h3>
-
-            <div
-                class="value"
-                id="occupancyRate">
-
-                0%
-
-            </div>
-
-        </div>
-
-
-    </div>
-
-
-    <!-- MAIN CONTENT -->
-
-    <div class="main-grid">
-
-
-        <!-- LEFT SIDE -->
-
-        <div>
-
-
-            <!-- PARKING -->
-
-            <div class="card">
-
-                <h2>
-                    🅿️ Parking Slots
-                </h2>
-
-                <div
-                    class="parking-grid"
-                    id="parkingGrid">
-
+                <div class="logo-name">
+                    Smart Parking
                 </div>
 
             </div>
 
 
-            <!-- VEHICLES -->
-
-            <div class="card">
-
-                <h2>
-                    🚘 Registered Vehicles
-                </h2>
-
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Plate Number
-                            </th>
-
-                            <th>
-                                Owner
-                            </th>
-
-                            <th>
-                                Type
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody
-                        id="vehicleTable">
-
-                    </tbody>
-
-                </table>
-
+            <div class="navigation-title">
+                Workspace
             </div>
 
 
-        </div>
+            <nav class="navigation">
+
+                <!-- Dashboard -->
+
+                <div class="navigation-item active">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                    </svg>
+
+                    Dashboard
+
+                </div>
 
 
-        <!-- RIGHT SIDE -->
+                <!-- Parking -->
 
-        <div>
+                <div class="navigation-item">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M3 10.5L12 4l9 6.5"></path>
+                        <path d="M5 10v9h14v-9"></path>
+                        <path d="M9 19v-5h6v5"></path>
+                    </svg>
+
+                    Parking
+
+                </div>
 
 
-            <!-- PREDICTION -->
+                <!-- Vehicles -->
 
-            <div class="card">
+                <div class="navigation-item">
 
-                <h2>
-                    📈 AI Parking Prediction
-                </h2>
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M5 17h14"></path>
+                        <path d="M6 17l-1-5 2-5h10l2 5-1 5"></path>
+                        <circle cx="8" cy="17" r="1.5"></circle>
+                        <circle cx="16" cy="17" r="1.5"></circle>
+                    </svg>
 
-                <div
-                    class="prediction-box">
+                    Vehicles
 
-                    <div
-                        class="prediction-value"
-                        id="predictionValue">
+                </div>
 
-                        0
+
+                <!-- Analytics -->
+
+                <div class="navigation-item">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M4 19V5"></path>
+                        <path d="M4 19h16"></path>
+                        <path d="M7 15l3-4 3 2 5-6"></path>
+                    </svg>
+
+                    Analytics
+
+                </div>
+
+
+                <!-- Security -->
+
+                <div class="navigation-item">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+
+                    Security
+
+                </div>
+
+            </nav>
+
+
+            <!-- System status -->
+
+            <div class="sidebar-bottom">
+
+                <div class="system-status">
+
+                    <span class="status-dot"></span>
+
+                    System operational
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =====================================================
+             MAIN
+        ====================================================== -->
+
+        <main class="main">
+
+
+            <!-- HEADER -->
+
+            <header class="header">
+
+                <div class="header-left">
+
+                    <h1>
+                        Parking Overview
+                    </h1>
+
+                    <p>
+                        Monitor your parking facility in real time
+                    </p>
+
+                </div>
+
+
+                <div class="header-right">
+
+                    <div class="live-status">
+
+                        <span class="status-dot"></span>
+
+                        LIVE
 
                     </div>
 
                     <div
-                        class="prediction-model"
-                        id="predictionModel">
+                        class="clock"
+                        id="currentTime"
+                    >
+                        --:--:--
+                    </div>
 
-                        Model: LSTM
+                </div>
+
+            </header>
+
+
+
+            <!-- =================================================
+                 STATISTICS
+            ================================================== -->
+
+            <section class="statistics">
+
+
+                <!-- Total -->
+
+                <div class="stat-card glass">
+
+                    <div class="stat-top">
+
+                        <div class="stat-label">
+                            Total Spaces
+                        </div>
+
+                        <div class="stat-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="3"
+                                    y="4"
+                                    width="18"
+                                    height="16"
+                                    rx="2"
+                                ></rect>
+
+                                <path d="M7 8h10"></path>
+                                <path d="M7 12h10"></path>
+                                <path d="M7 16h6"></path>
+                            </svg>
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="stat-number"
+                        id="totalSlots"
+                    >
+                        0
+                    </div>
+
+                    <div class="stat-description">
+                        Total parking capacity
+                    </div>
+
+                </div>
+
+
+                <!-- Available -->
+
+                <div class="stat-card glass">
+
+                    <div class="stat-top">
+
+                        <div class="stat-label">
+                            Available
+                        </div>
+
+                        <div class="stat-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                ></circle>
+
+                                <path d="M8 12l2.5 2.5L16 9"></path>
+                            </svg>
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="stat-number accent"
+                        id="availableSlots"
+                    >
+                        0
+                    </div>
+
+                    <div class="stat-description">
+                        Spaces ready to park
+                    </div>
+
+                </div>
+
+
+                <!-- Occupied -->
+
+                <div class="stat-card glass">
+
+                    <div class="stat-top">
+
+                        <div class="stat-label">
+                            Occupied
+                        </div>
+
+                        <div class="stat-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M5 17h14"></path>
+                                <path d="M6 17l-1-5 2-5h10l2 5-1 5"></path>
+                                <circle cx="8" cy="17" r="1.5"></circle>
+                                <circle cx="16" cy="17" r="1.5"></circle>
+                            </svg>
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="stat-number"
+                        id="occupiedSlots"
+                    >
+                        0
+                    </div>
+
+                    <div class="stat-description">
+                        Currently occupied
+                    </div>
+
+                </div>
+
+
+                <!-- Occupancy -->
+
+                <div class="stat-card glass">
+
+                    <div class="stat-top">
+
+                        <div class="stat-label">
+                            Occupancy Rate
+                        </div>
+
+                        <div class="stat-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M12 3v18"></path>
+                                <path d="M3 12h18"></path>
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                ></circle>
+                            </svg>
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="stat-number accent"
+                        id="occupancyRate"
+                    >
+                        0%
+                    </div>
+
+                    <div class="stat-description">
+                        Current utilization
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 DASHBOARD GRID
+            ================================================== -->
+
+            <section class="dashboard-grid">
+
+
+                <!-- =============================================
+                     CAMERA
+                ============================================== -->
+
+                <div class="camera-card glass">
+
+                    <div class="camera-grid"></div>
+
+                    <div class="camera-scan"></div>
+
+
+                    <div class="camera-label">
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M4 7h3l2-2h6l2 2h3v11H4z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+
+                        LIVE CAMERA
+
+                    </div>
+
+
+                    <div class="camera-center">
+
+                        <div class="camera-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M4 7h3l2-2h6l2 2h3v11H4z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+
+                        </div>
+
+                        <div
+                            class="camera-message"
+                            id="cameraMessage"
+                        >
+                            Camera feed ready
+                        </div>
+
+                    </div>
+
+
+                    <div class="camera-controls">
+
+                        <button
+                            class="button button-primary"
+                            onclick="startCamera()"
+                        >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polygon points="8 5 19 12 8 19 8 5"></polygon>
+                            </svg>
+
+                            Start Camera
+
+                        </button>
+
+
+                        <button
+                            class="button button-secondary"
+                            onclick="stopCamera()"
+                        >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="6"
+                                    y="6"
+                                    width="12"
+                                    height="12"
+                                    rx="2"
+                                ></rect>
+                            </svg>
+
+                            Stop
+
+                        </button>
 
                     </div>
 
                 </div>
 
-            </div>
 
 
-            <!-- SECURITY -->
+                <!-- =============================================
+                     PARKING MAP
+                ============================================== -->
 
-            <div class="card">
+                <div class="parking-card card glass">
 
-                <h2>
-                    🔐 Security
-                </h2>
+                    <div class="card-header">
+
+                        <div>
+
+                            <div class="card-title">
+                                Live Parking Map
+                            </div>
+
+                            <div class="card-description">
+                                Current space availability
+                            </div>
+
+                        </div>
+
+                        <div class="card-badge">
+                            REAL TIME
+                        </div>
+
+                    </div>
 
 
-                <div
-                    class="security-item
-                           security-safe">
+                    <div
+                        class="parking-map"
+                        id="parkingMap"
+                    >
 
-                    <strong>
-                        Registered Vehicles
-                    </strong>
+                        <div class="parking-empty">
+                            No parking slots configured
+                        </div>
 
-                    <p id="vehicleCount">
-                        0
-                    </p>
+                    </div>
+
+
+                    <div class="legend">
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot legend-free"></span>
+
+                            Available
+
+                        </div>
+
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot legend-occupied"></span>
+
+                            Occupied
+
+                        </div>
+
+                    </div>
 
                 </div>
 
 
-                <div
-                    class="security-item
-                           security-danger">
 
-                    <strong>
-                        Stolen Vehicles
-                    </strong>
+                <!-- =============================================
+                     PREDICTION
+                ============================================== -->
 
-                    <p id="stolenCount">
-                        0
-                    </p>
+                <div class="prediction-card card glass">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <div class="card-title">
+                                Parking Prediction
+                            </div>
+
+                            <div class="card-description">
+                                Expected availability
+                            </div>
+
+                        </div>
+
+                        <div class="card-badge">
+                            FORECAST
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <span
+                            class="prediction-number"
+                            id="predictionValue"
+                        >
+                            --
+                        </span>
+
+                        <span class="prediction-unit">
+                            spaces expected
+                        </span>
+
+                    </div>
+
+
+                    <div class="prediction-bar">
+
+                        <div class="prediction-fill"></div>
+
+                    </div>
+
+
+                    <div class="prediction-info">
+
+                        <span>
+                            Expected availability
+                        </span>
+
+                        <span id="predictionTime">
+                            Next hour
+                        </span>
+
+                    </div>
 
                 </div>
 
 
-                <div
-                    class="security-item
-                           security-danger">
 
-                    <strong>
-                        Unauthorized Vehicles
-                    </strong>
+                <!-- =============================================
+                     SECURITY
+                ============================================== -->
 
-                    <p id="unauthorizedCount">
-                        0
-                    </p>
+                <div class="security-card card glass">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <div class="card-title">
+                                Vehicle Security
+                            </div>
+
+                            <div class="card-description">
+                                Vehicle access monitoring
+                            </div>
+
+                        </div>
+
+                        <div class="card-badge">
+                            ACTIVE
+                        </div>
+
+                    </div>
+
+
+                    <div class="security-grid">
+
+
+                        <div class="security-item">
+
+                            <div
+                                class="security-number"
+                                id="registeredVehicles"
+                            >
+                                0
+                            </div>
+
+                            <div class="security-label">
+                                REGISTERED
+                            </div>
+
+                        </div>
+
+
+                        <div class="security-item">
+
+                            <div
+                                class="security-number"
+                                id="stolenVehicles"
+                            >
+                                0
+                            </div>
+
+                            <div class="security-label">
+                                STOLEN
+                            </div>
+
+                        </div>
+
+
+                        <div class="security-item">
+
+                            <div
+                                class="security-number"
+                                id="unauthorizedVehicles"
+                            >
+                                0
+                            </div>
+
+                            <div class="security-label">
+                                UNAUTHORIZED
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="security-alert">
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                            <path d="M10.3 3.6L2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"></path>
+                        </svg>
+
+                        Security monitoring active
+
+                    </div>
 
                 </div>
 
 
-            </div>
+
+                <!-- =============================================
+                     REGISTERED VEHICLES
+                ============================================== -->
+
+                <div class="vehicles-card card glass">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <div class="card-title">
+                                Registered Vehicles
+                            </div>
+
+                            <div class="card-description">
+                                Vehicles registered in the parking system
+                            </div>
+
+                        </div>
+
+                        <div class="card-badge">
+                            VEHICLES
+                        </div>
+
+                    </div>
 
 
-            <!-- AI MODEL -->
+                    <div class="table-container">
 
-            <div class="card">
+                        <table>
 
-                <h2>
-                    🤖 AI Model
-                </h2>
+                            <thead>
 
-                <p>
-                    Vehicle Detection:
-                    <strong id="vehicleModel">
-                        YOLOv11
-                    </strong>
-                </p>
+                                <tr>
 
-                <br>
+                                    <th>
+                                        License Plate
+                                    </th>
 
-                <p>
-                    Parking Prediction:
-                    <strong id="predictionModelSide">
-                        LSTM
-                    </strong>
-                </p>
+                                    <th>
+                                        Owner
+                                    </th>
 
-            </div>
+                                    <th>
+                                        Vehicle
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                </tr>
+
+                            </thead>
 
 
-        </div>
+                            <tbody id="vehicleTable">
 
+                                <tr>
+
+                                    <td
+                                        colspan="4"
+                                        class="empty-table"
+                                    >
+                                        No registered vehicles
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+        </main>
 
     </div>
 
 
-</div>
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+
+    <script>
+
+        const API_URL = "http://127.0.0.1:8000";
 
 
+        /* =====================================================
+           CLOCK
+        ====================================================== */
 
-<script>
+        function updateClock() {
 
+            const now = new Date();
 
-/* =====================================
-   API CONFIGURATION
-   ===================================== */
-
-const API_URL =
-    "http://127.0.0.1:8000";
-
-
-
-/* =====================================
-   START CAMERA
-   ===================================== */
-
-async function startCamera() {
-
-    try {
-
-        const response =
-            await fetch(
-                `${API_URL}/camera/start`,
-                {
-                    method: "POST"
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            alert(
-                data.detail ||
-                "Could not start camera"
-            );
-
-            return;
-        }
-
-
-        document.getElementById(
-            "cameraStatus"
-        ).textContent =
-            "Camera: ON";
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Could not connect to backend."
-        );
-
-    }
-
-}
-
-
-
-/* =====================================
-   STOP CAMERA
-   ===================================== */
-
-async function stopCamera() {
-
-    try {
-
-        const response =
-            await fetch(
-                `${API_URL}/camera/stop`,
-                {
-                    method: "POST"
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        document.getElementById(
-            "cameraStatus"
-        ).textContent =
-            "Camera: OFF";
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Could not connect to backend."
-        );
-
-    }
-
-}
-
-
-
-/* =====================================
-   LOAD DASHBOARD
-   ===================================== */
-
-async function loadDashboard() {
-
-    try {
-
-        const response =
-            await fetch(
-                `${API_URL}/dashboard/summary`
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Dashboard request failed"
-            );
+            document.getElementById("currentTime")
+                .textContent =
+                now.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                });
 
         }
 
+        updateClock();
 
-        const data =
-            await response.json();
+        setInterval(updateClock, 1000);
 
 
-        updateDashboard(data);
 
+        /* =====================================================
+           ANIMATED NUMBER
+        ====================================================== */
 
-    } catch (error) {
-
-        console.error(
-            "Dashboard error:",
-            error
-        );
-
-    }
-
-}
-
-
-
-/* =====================================
-   UPDATE DASHBOARD
-   ===================================== */
-
-function updateDashboard(data) {
-
-
-    /* PARKING */
-
-    const parking =
-        data.parking || {};
-
-
-    document.getElementById(
-        "totalSlots"
-    ).textContent =
-        parking.total_slots || 0;
-
-
-    document.getElementById(
-        "availableSlots"
-    ).textContent =
-        parking.available || 0;
-
-
-    document.getElementById(
-        "occupiedSlots"
-    ).textContent =
-        parking.occupied || 0;
-
-
-    document.getElementById(
-        "occupancyRate"
-    ).textContent =
-        `${parking.occupancy_rate || 0}%`;
-
-
-    /* VEHICLES */
-
-    const vehicles =
-        data.vehicles || {};
-
-
-    document.getElementById(
-        "vehicleCount"
-    ).textContent =
-        vehicles.total || 0;
-
-
-    /* SECURITY */
-
-    const security =
-        data.security || {};
-
-
-    document.getElementById(
-        "stolenCount"
-    ).textContent =
-        security.stolen_detected || 0;
-
-
-    document.getElementById(
-        "unauthorizedCount"
-    ).textContent =
-        security.unauthorized || 0;
-
-
-    /* PREDICTION */
-
-    const prediction =
-        data.prediction || {};
-
-
-    document.getElementById(
-        "predictionValue"
-    ).textContent =
-        prediction.predicted_occupancy || 0;
-
-
-    document.getElementById(
-        "predictionModel"
-    ).textContent =
-        `Model: ${
-            prediction.model || "LSTM"
-        }`;
-
-
-    document.getElementById(
-        "predictionModelSide"
-    ).textContent =
-        prediction.model || "LSTM";
-
-}
-
-
-
-/* =====================================
-   LOAD VEHICLES
-   ===================================== */
-
-async function loadVehicles() {
-
-    try {
-
-        const response =
-            await fetch(
-                `${API_URL}/vehicles/`
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Vehicle request failed"
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        displayVehicles(
-            data.vehicles || []
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Vehicle error:",
-            error
-        );
-
-    }
-
-}
-
-
-
-/* =====================================
-   DISPLAY VEHICLES
-   ===================================== */
-
-function displayVehicles(
-    vehicles
-) {
-
-    const table =
-        document.getElementById(
-            "vehicleTable"
-        );
-
-
-    table.innerHTML = "";
-
-
-    if (vehicles.length === 0) {
-
-        table.innerHTML = `
-
-            <tr>
-
-                <td colspan="4">
-                    No registered vehicles
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    vehicles.forEach(
-        vehicle => {
-
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-
-            let status =
-                vehicle.stolen
-                ? "STOLEN"
-                : vehicle.authorized
-                ? "AUTHORIZED"
-                : "UNAUTHORIZED";
-
-
-            row.innerHTML = `
-
-                <td>
-                    ${
-                        vehicle.plate_number
-                        || "-"
-                    }
-                </td>
-
-                <td>
-                    ${
-                        vehicle.owner_name
-                        || "-"
-                    }
-                </td>
-
-                <td>
-                    ${
-                        vehicle.vehicle_type
-                        || "-"
-                    }
-                </td>
-
-                <td>
-                    ${status}
-                </td>
-
-            `;
-
-
-            table.appendChild(row);
-
-        }
-    );
-
-}
-
-
-
-/* =====================================
-   PARKING SLOTS
-   ===================================== */
-
-async function loadParkingSlots() {
-
-    try {
-
-        const response =
-            await fetch(
-                `${API_URL}/parking/`
-            );
-
-
-        const data =
-            await response.json();
-
-
-        const grid =
-            document.getElementById(
-                "parkingGrid"
-            );
-
-
-        grid.innerHTML = "";
-
-
-        /*
-         * The API currently returns
-         * statistics only.
-         *
-         * Once real parking slot
-         * data is connected, this
-         * section will display each
-         * actual slot.
-         */
-
-
-        const total =
-            data.total_slots || 0;
-
-
-        if (total === 0) {
-
-            grid.innerHTML = `
-
-                <div>
-                    No parking slots configured.
-                </div>
-
-            `;
-
-            return;
-        }
-
-
-        for (
-            let i = 1;
-            i <= total;
-            i++
+        function animateNumber(
+            elementId,
+            target,
+            suffix = ""
         ) {
 
-            const slot =
-                document.createElement(
-                    "div"
-                );
+            const element =
+                document.getElementById(elementId);
+
+            if (!element)
+                return;
+
+            const currentText =
+                element.textContent
+                    .replace(/[^0-9.]/g, "");
+
+            const start =
+                Number(currentText) || 0;
+
+            const duration = 500;
+
+            const startTime =
+                performance.now();
 
 
-            slot.className =
-                "parking-slot slot-free";
+            function update(currentTime) {
+
+                const progress =
+                    Math.min(
+                        (currentTime - startTime) /
+                        duration,
+                        1
+                    );
+
+                const value =
+                    start +
+                    (target - start) *
+                    progress;
+
+                element.textContent =
+                    Math.round(value) +
+                    suffix;
 
 
-            slot.textContent =
-                `Slot ${i}`;
+                if (progress < 1) {
 
+                    requestAnimationFrame(update);
 
-            grid.appendChild(slot);
+                }
+
+            }
+
+            requestAnimationFrame(update);
 
         }
 
 
-    } catch (error) {
 
-        console.error(
-            "Parking error:",
-            error
+        /* =====================================================
+           DASHBOARD
+        ====================================================== */
+
+        async function loadDashboard() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/dashboard/`
+                    );
+
+
+                if (!response.ok)
+                    return;
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    data.total_slots !== undefined
+                ) {
+
+                    animateNumber(
+                        "totalSlots",
+                        data.total_slots
+                    );
+
+                }
+
+
+                if (
+                    data.available_slots !== undefined
+                ) {
+
+                    animateNumber(
+                        "availableSlots",
+                        data.available_slots
+                    );
+
+                }
+
+
+                if (
+                    data.occupied_slots !== undefined
+                ) {
+
+                    animateNumber(
+                        "occupiedSlots",
+                        data.occupied_slots
+                    );
+
+                }
+
+
+                if (
+                    data.occupancy_rate !== undefined
+                ) {
+
+                    animateNumber(
+                        "occupancyRate",
+                        data.occupancy_rate,
+                        "%"
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Dashboard API unavailable:",
+                    error
+                );
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           PARKING MAP
+        ====================================================== */
+
+        async function loadParkingSlots() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/parking/`
+                    );
+
+
+                if (!response.ok)
+                    return;
+
+
+                const data =
+                    await response.json();
+
+
+                const total =
+                    data.total_slots || 0;
+
+
+                const map =
+                    document.getElementById(
+                        "parkingMap"
+                    );
+
+
+                if (total === 0) {
+
+                    map.innerHTML = `
+
+                        <div class="parking-empty">
+                            No parking slots configured
+                        </div>
+
+                    `;
+
+                    return;
+
+                }
+
+
+                map.innerHTML = "";
+
+
+                for (
+                    let i = 1;
+                    i <= total;
+                    i++
+                ) {
+
+                    const slot =
+                        document.createElement("div");
+
+
+                    slot.className =
+                        "parking-slot";
+
+
+                    slot.innerHTML = `
+
+                        <div class="slot-number">
+                            A${String(i).padStart(2, "0")}
+                        </div>
+
+                        <div class="slot-status">
+                            AVAILABLE
+                        </div>
+
+                    `;
+
+
+                    map.appendChild(slot);
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Parking API unavailable:",
+                    error
+                );
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           VEHICLES
+        ====================================================== */
+
+        async function loadVehicles() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/vehicles/`
+                    );
+
+
+                if (!response.ok)
+                    return;
+
+
+                const vehicles =
+                    await response.json();
+
+
+                displayVehicles(vehicles);
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Vehicle API unavailable:",
+                    error
+                );
+
+            }
+
+        }
+
+
+
+        function displayVehicles(
+            vehicles
+        ) {
+
+            const table =
+                document.getElementById(
+                    "vehicleTable"
+                );
+
+
+            if (
+                !vehicles ||
+                vehicles.length === 0
+            ) {
+
+                table.innerHTML = `
+
+                    <tr>
+
+                        <td
+                            colspan="4"
+                            class="empty-table"
+                        >
+                            No registered vehicles
+                        </td>
+
+                    </tr>
+
+                `;
+
+                return;
+
+            }
+
+
+            table.innerHTML = "";
+
+
+            vehicles.forEach(
+                vehicle => {
+
+                    const row =
+                        document.createElement(
+                            "tr"
+                        );
+
+
+                    row.innerHTML = `
+
+                        <td>
+
+                            <span class="plate">
+
+                                ${
+                                    vehicle.plate ||
+                                    "UNKNOWN"
+                                }
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            ${
+                                vehicle.owner ||
+                                "—"
+                            }
+
+                        </td>
+
+
+                        <td>
+
+                            ${
+                                vehicle.vehicle_type ||
+                                "Vehicle"
+                            }
+
+                        </td>
+
+
+                        <td class="${
+                            vehicle.stolen
+                            ? "unauthorized"
+                            : "authorized"
+                        }">
+
+                            ${
+                                vehicle.stolen
+                                ? "STOLEN"
+                                : "AUTHORIZED"
+                            }
+
+                        </td>
+
+                    `;
+
+
+                    table.appendChild(row);
+
+                }
+            );
+
+        }
+
+
+
+        /* =====================================================
+           CAMERA
+        ====================================================== */
+
+        async function startCamera() {
+
+            const message =
+                document.getElementById(
+                    "cameraMessage"
+                );
+
+
+            message.textContent =
+                "Starting camera...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/camera/start`,
+                        {
+                            method: "POST"
+                        }
+                    );
+
+
+                if (response.ok) {
+
+                    message.textContent =
+                        "Camera is running";
+
+                }
+
+                else {
+
+                    message.textContent =
+                        "Camera unavailable";
+
+                }
+
+            }
+
+            catch (error) {
+
+                message.textContent =
+                    "Backend not connected";
+
+                console.log(error);
+
+            }
+
+        }
+
+
+
+        async function stopCamera() {
+
+            const message =
+                document.getElementById(
+                    "cameraMessage"
+                );
+
+
+            try {
+
+                await fetch(
+                    `${API_URL}/camera/stop`,
+                    {
+                        method: "POST"
+                    }
+                );
+
+
+                message.textContent =
+                    "Camera feed stopped";
+
+            }
+
+            catch (error) {
+
+                message.textContent =
+                    "Camera stopped";
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           LOAD EVERYTHING
+        ====================================================== */
+
+        async function loadAllData() {
+
+            await Promise.all([
+
+                loadDashboard(),
+
+                loadParkingSlots(),
+
+                loadVehicles()
+
+            ]);
+
+        }
+
+
+        loadAllData();
+
+
+
+        /* =====================================================
+           AUTO REFRESH
+        ====================================================== */
+
+        setInterval(
+            loadAllData,
+            5000
         );
 
-    }
-
-}
-
-
-
-/* =====================================
-   LOAD EVERYTHING
-   ===================================== */
-
-async function loadAllData() {
-
-    await loadDashboard();
-
-    await loadVehicles();
-
-    await loadParkingSlots();
-
-}
-
-
-
-/* =====================================
-   INITIAL LOAD
-   ===================================== */
-
-loadAllData();
-
-
-
-/* =====================================
-   AUTO REFRESH
-   ===================================== */
-
-setInterval(
-    loadAllData,
-    5000
-);
-
-
-</script>
-
+    </script>
 
 </body>
-
 </html>
