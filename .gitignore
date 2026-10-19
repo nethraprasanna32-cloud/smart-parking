@@ -3,4 +3,10 @@ venv/
 __pycache__/
 *.pyc
 *.pt
+models/
+test_videos/
+firmware/**/secrets.h
+.pytest_cache/
 .DS_Store
+
+data/

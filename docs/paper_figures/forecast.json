@@ -1,0 +1,21 @@
+{
+ "train_windows": 4685,
+ "loss": 0.002013734309002757,
+ "mae": {
+  "15": {
+   "lstm": 3.24,
+   "baseline": 1.9,
+   "persistence": 1.46
+  },
+  "30": {
+   "lstm": 2.58,
+   "baseline": 2.26,
+   "persistence": 2.45
+  },
+  "60": {
+   "lstm": 1.79,
+   "baseline": 2.45,
+   "persistence": 4.24
+  }
+ }
+}

@@ -1,0 +1,332 @@
+import itertools
+import os
+import re
+from difflib import get_close_matches
+
+
+VEHICLE_CLASSES = {
+    2: "car",
+    3: "motorcycle",
+    5: "bus",
+    7: "truck",
+}
+
+PLATE_PATTERNS = {
+    # Indian registration format, e.g. MH12AB1234, KA01A0001, DL8CAF5031.
+    "IN": re.compile(r"^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{4}$"),
+    # Anything plate-shaped; use for foreign test footage.
+    "ANY": re.compile(r"^[A-Z0-9]{4,10}$"),
+}
+
+# Demo reads cycle through these: one already inside, one new arrival,
+# one blocked, one already inside, one stolen.
+SIMULATED_PLATES = [
+    "MH12AB1234",
+    "TN09BC4321",
+    "MH14XY9087",
+    "KA01AB0001",
+    "DL8CAF5031",
+]
+
+
+def normalize_plate(text):
+    return re.sub(r"[^A-Z0-9]", "", (text or "").upper())
+
+
+def is_valid_plate(plate_number, region=None):
+    region = (region or os.getenv("PLATE_REGION", "IN")).upper()
+    pattern = PLATE_PATTERNS.get(region, PLATE_PATTERNS["IN"])
+    return bool(pattern.match(plate_number or ""))
+
+
+def snap_plate(plate_number, known_plates, cutoff=0.82):
+    """Return the closest known plate for a slightly misread one."""
+    if not plate_number or not known_plates:
+        return None
+    if plate_number in known_plates:
+        return plate_number
+
+    matches = get_close_matches(
+        plate_number,
+        list(known_plates),
+        n=1,
+        cutoff=cutoff,
+    )
+    return matches[0] if matches else None
+
+
+def _require_weights(model_path):
+    # Ultralytics silently downloads unknown names, which is surprising at a
+    # gate. Only stock "*.pt" model names may be fetched; custom paths must exist.
+    if os.path.sep in model_path or "/" in model_path:
+        if not os.path.isfile(model_path):
+            raise FileNotFoundError(f"Model weights not found: {model_path}")
+
+
+class SimulatedVehicleDetector:
+    def detect(self, frame=None):
+        return [
+            {
+                "type": "car",
+                "confidence": 0.98,
+                "bbox": [24, 28, 180, 140],
+            },
+        ]
+
+
+class YOLO11VehicleDetector:
+    default_weights = "yolo11n.pt"
+
+    def __init__(self, model_path=None):
+        from ultralytics import YOLO
+
+        model_path = model_path or os.getenv("DETECTOR_MODEL", self.default_weights)
+        _require_weights(model_path)
+        self.model = YOLO(model_path)
+
+    def detect(self, frame):
+        if frame is None:
+            return []
+
+        results = self.model(frame, verbose=False)
+        detections = []
+
+        for result in results:
+            if result.boxes is None:
+                continue
+
+            for box in result.boxes:
+                class_id = int(box.cls[0])
+
+                if class_id not in VEHICLE_CLASSES:
+                    continue
+
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                detections.append({
+                    "type": VEHICLE_CLASSES[class_id],
+                    "confidence": float(box.conf[0]),
+                    "bbox": [int(x1), int(y1), int(x2), int(y2)],
+                })
+
+        return detections
+
+
+class RTDETRVehicleDetector(YOLO11VehicleDetector):
+    default_weights = "rtdetr-l.pt"
+
+    def __init__(self, model_path=None):
+        from ultralytics import RTDETR
+
+        model_path = model_path or self.default_weights
+        _require_weights(model_path)
+        self.model = RTDETR(model_path)
+
+
+DETECTORS = {
+    "simulated": SimulatedVehicleDetector,
+    "yolo11": YOLO11VehicleDetector,
+    "rtdetr": RTDETRVehicleDetector,
+}
+
+
+class VehicleDetectionManager:
+    def __init__(self, model_type="simulated"):
+        self.detector = None
+        self.model_type = None
+        self.change_model(model_type)
+
+    def change_model(self, model_type):
+        if model_type not in DETECTORS:
+            raise ValueError(
+                "Unsupported model type. Choose "
+                + ", ".join(DETECTORS)
+                + "."
+            )
+
+        # Load first so a missing package or weights file leaves the
+        # previous detector in place.
+        detector = DETECTORS[model_type]()
+        self.detector = detector
+        self.model_type = model_type
+
+    @property
+    def simulated(self):
+        return self.model_type == "simulated"
+
+    def detect(self, frame=None):
+        return self.detector.detect(frame)
+
+
+class LicensePlateDetector:
+    def __init__(self, model_path=None, simulated=True):
+        self.simulated = simulated
+        self.model = None
+
+        if not simulated:
+            from ultralytics import YOLO
+
+            model_path = model_path or os.getenv(
+                "PLATE_MODEL_PATH",
+                "license_plate_detector.pt"
+            )
+            if not os.path.isfile(model_path):
+                raise FileNotFoundError(
+                    f"Plate model not found: {model_path}"
+                )
+            self.model = YOLO(model_path)
+
+    def detect(self, frame=None):
+        if self.simulated:
+            return [{"confidence": 0.95, "bbox": [48, 102, 146, 128]}]
+
+        if frame is None:
+            return []
+
+        detections = []
+        results = self.model(frame, verbose=False)
+
+        for result in results:
+            if result.boxes is None:
+                continue
+
+            for box in result.boxes:
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                detections.append({
+                    "confidence": float(box.conf[0]),
+                    "bbox": [int(x1), int(y1), int(x2), int(y2)],
+                })
+
+        return detections
+
+
+def _pick_ocr_engine(requested):
+    requested = (requested or os.getenv("OCR_ENGINE", "auto")).lower()
+    if requested != "auto":
+        return requested
+    try:
+        import fast_plate_ocr  # noqa: F401
+        return "fast-plate-ocr"
+    except ImportError:
+        return "easyocr"
+
+
+class OCREngine:
+    """Reads text from a cropped plate.
+
+    fast-plate-ocr (a model trained only on plates) is preferred; EasyOCR is
+    the fallback when it isn't installed. Set OCR_ENGINE to force one.
+    """
+
+    def __init__(self, simulated=True, engine=None):
+        self.simulated = simulated
+        self.engine = "simulated" if simulated else _pick_ocr_engine(engine)
+        self.reader = None
+        self._simulated_plates = itertools.cycle(SIMULATED_PLATES)
+
+        if self.engine == "fast-plate-ocr":
+            from fast_plate_ocr import LicensePlateRecognizer
+
+            self.reader = LicensePlateRecognizer(
+                os.getenv("OCR_MODEL", "cct-s-v2-global-model"),
+                device="cpu",
+            )
+        elif self.engine == "easyocr":
+            import easyocr
+
+            self.reader = easyocr.Reader(["en"], verbose=False)
+        elif self.engine != "simulated":
+            raise ValueError("OCR_ENGINE must be auto, fast-plate-ocr or easyocr.")
+
+    @staticmethod
+    def prepare(image):
+        """Grayscale and upscale small crops; EasyOCR struggles below ~64 px tall."""
+        import cv2
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+        height = gray.shape[0]
+        if height < 64:
+            scale = 64 / max(1, height)
+            gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        return gray
+
+    def readtext(self, image=None):
+        """Return (text, confidence) for a cropped plate image."""
+        if self.simulated:
+            return next(self._simulated_plates), 0.99
+
+        if image is None or image.size == 0:
+            return "", 0.0
+
+        if self.engine == "fast-plate-ocr":
+            return self._read_fast_plate(image)
+        return self._read_easyocr(image)
+
+    def _read_fast_plate(self, image):
+        import cv2
+
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) if image.ndim == 3 else cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        prediction = self.reader.run(rgb, return_confidence=True)[0]
+        probs = list(prediction.char_probs) if prediction.char_probs is not None else []
+        confidence = float(sum(probs) / len(probs)) if probs else 0.0
+        return prediction.plate, confidence
+
+    def _read_easyocr(self, image):
+        results = self.reader.readtext(
+            self.prepare(image),
+            allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        )
+        if not results:
+            return "", 0.0
+
+        # Two-row plates come back as separate fragments: read them
+        # top-to-bottom, then left-to-right.
+        results.sort(key=lambda item: (item[0][0][1] // 10, item[0][0][0]))
+        text = "".join(fragment for _, fragment, _ in results)
+        confidence = min(float(conf) for _, _, conf in results)
+
+        return text, confidence
+
+
+class ALPRService:
+    def __init__(self, plate_detector=None, ocr=None, min_confidence=0.4):
+        self.plate_detector = plate_detector or LicensePlateDetector()
+        self.ocr = ocr or OCREngine()
+        self.min_confidence = min_confidence
+
+    def detect_and_recognize(self, frame=None, known_plates=None):
+        results = []
+
+        for plate in self.plate_detector.detect(frame):
+            plate_image = None
+
+            if frame is not None:
+                x1, y1, x2, y2 = plate["bbox"]
+                height, width = frame.shape[:2]
+                plate_image = frame[
+                    max(0, y1):min(height, y2),
+                    max(0, x1):min(width, x2)
+                ]
+
+            raw_text, ocr_confidence = self.ocr.readtext(plate_image)
+            plate_text = normalize_plate(raw_text)
+
+            if not plate_text or ocr_confidence < self.min_confidence:
+                continue
+
+            matched = snap_plate(plate_text, known_plates or ())
+            if matched:
+                plate_text = matched
+            elif not is_valid_plate(plate_text):
+                continue
+
+            results.append({
+                "plate_text": plate_text,
+                "raw_text": raw_text,
+                "confidence": round(
+                    min(plate.get("confidence", 0), ocr_confidence),
+                    3
+                ),
+                "bbox": plate["bbox"],
+            })
+
+        return results

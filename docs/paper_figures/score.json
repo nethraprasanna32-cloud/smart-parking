@@ -1,0 +1,64 @@
+{
+ "total_crops": 95,
+ "readable": 75,
+ "unreadable": 15,
+ "not_plate": 5,
+ "fast": {
+  "exact": 59,
+  "exact_pct": 78.7,
+  "within_1_char_pct": 86.7,
+  "mean_cer_pct": 6.5
+ },
+ "easy": {
+  "exact": 7,
+  "exact_pct": 9.3,
+  "within_1_char_pct": 13.3,
+  "mean_cer_pct": 67.7
+ },
+ "fast_gate": {
+  "passed": 75,
+  "wrong_after_gate": 16
+ },
+ "per_plate": {
+  "TN22DD3724": {
+   "n": 2,
+   "fast": 0,
+   "easy": 0
+  },
+  "TN14Q0999": {
+   "n": 4,
+   "fast": 0,
+   "easy": 0
+  },
+  "38DMZP": {
+   "n": 23,
+   "fast": 22,
+   "easy": 0
+  },
+  "FL020EH": {
+   "n": 3,
+   "fast": 2,
+   "easy": 0
+  },
+  "9MRM624": {
+   "n": 31,
+   "fast": 30,
+   "easy": 0
+  },
+  "MP04ZU2506": {
+   "n": 2,
+   "fast": 0,
+   "easy": 0
+  },
+  "MP04RB0693": {
+   "n": 8,
+   "fast": 5,
+   "easy": 7
+  },
+  "MP34CA5252": {
+   "n": 2,
+   "fast": 0,
+   "easy": 0
+  }
+ }
+}

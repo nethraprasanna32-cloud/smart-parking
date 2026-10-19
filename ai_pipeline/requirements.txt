@@ -1,0 +1,11 @@
+# Real gate cameras, vehicle/plate detection and OCR.
+opencv-python>=4.9
+ultralytics>=8.3
+numpy>=1.26
+
+# Plate OCR: fast-plate-ocr is far more accurate on plates; EasyOCR is the fallback.
+fast-plate-ocr[onnx]>=1.0
+easyocr>=1.7
+
+# Optional: LSTM forecaster (python -m ai_pipeline.forecast train)
+# torch>=2.2
