@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entry Screen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="screens.css">
+</head>
+<body class="screen">
+
+<header class="screen-bar">
+    <span class="brand">Smart Parking</span>
+    <span class="screen-bar-end">
+        <span>Entry gate</span>
+        <span class="clock" id="clock">--:--</span>
+    </span>
+</header>
+
+<p class="banner bad" id="notice" hidden></p>
+
+<main class="arrival" id="arrival" data-tone="idle" aria-live="polite">
+    <p class="arrival-plate" id="plate" hidden></p>
+    <p class="arrival-lead" id="lead">Welcome</p>
+    <p class="arrival-big" id="big">Drive up to the barrier</p>
+    <p class="arrival-message" id="message">Your parking space will show here once your number plate is read.</p>
+    <ol class="arrival-map" id="map" hidden aria-label="Parking spaces"></ol>
+</main>
+
+<script src="arrival.js"></script>
+</body>
+</html>

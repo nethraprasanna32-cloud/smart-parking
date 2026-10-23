@@ -15,6 +15,7 @@ class SettingsRequest(BaseModel):
     event_cooldown_seconds: Optional[int] = Field(default=None, ge=0, le=3600)
     min_camera_reads: Optional[int] = Field(default=None, ge=1, le=10)
     admit_visitors: Optional[bool] = None
+    paper_plates: Optional[bool] = None
     plate_region: Optional[Literal["IN", "ANY"]] = None
     alert_kinds: Optional[list[str]] = Field(default=None, description=f"Any of {', '.join(ALERT_KINDS)}")
 

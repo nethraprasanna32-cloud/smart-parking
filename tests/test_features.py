@@ -1,6 +1,7 @@
 import http.server
 import json
 import threading
+import time
 from datetime import date, timedelta
 
 import pytest
@@ -210,3 +211,35 @@ def test_daily_report(client, system):
     assert today["average_stay_minutes"] == 0
     assert today["peak_occupancy"] >= 2
     assert report["totals"]["entries"] == 1
+
+
+def test_ntfy_webhook_gets_plain_text(client, system, monkeypatch):
+    received = []
+
+    class Hook(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = self.rfile.read(int(self.headers["Content-Length"])).decode()
+            received.append((dict(self.headers), body))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Hook)
+    threading.Thread(target=server.handle_request, daemon=True).start()
+    monkeypatch.setenv("ALERT_WEBHOOK_FORMAT", "ntfy")
+    system.alerts.webhook_url = f"http://127.0.0.1:{server.server_port}/my-topic"
+
+    enter(client, "DL8CAF5031")      # stolen
+    for _ in range(50):
+        if received:
+            break
+        time.sleep(0.1)
+    server.server_close()
+
+    headers, body = received[0]
+    assert headers["Title"] == "Stolen vehicle at the gate"
+    assert headers["Priority"] == "urgent"
+    assert "Plate: DL8CAF5031" in body and "Gate: Entry gate" in body
+    assert not body.startswith("{")

@@ -2,6 +2,8 @@ import os
 
 # Tests never touch the real data/parking.db; set before the app is imported.
 os.environ["DATABASE_PATH"] = ":memory:"
+# Nor the real .env, so tests never send alerts to a real inbox.
+os.environ["LOAD_DOTENV"] = "0"
 
 import pytest
 from fastapi.testclient import TestClient

@@ -27,12 +27,23 @@ uvicorn backend.app.main:app --reload
 
 Open http://localhost:8000/ for the dashboard, or http://localhost:8000/docs for the API.
 
-The dashboard has five pages: **Overview** (free spaces, the lot, latest
-activity), **Gates** (cameras, barriers, recording a car by hand),
-**Activity** (search, CSV export, weekly report), **Vehicles** and
+The dashboard has four pages: **Overview** (free spaces, the lot, latest
+activity, and on the right the entry and exit cameras, barriers and recording
+a car by hand), **Activity** (search, CSV export, weekly report), **Vehicles** and
 **Settings**. Press **Present** (or the `P` key) to show the overview
 full-screen for a projector or TV, or open http://localhost:8000/?present on
 a kiosk screen.
+
+Two standalone pages are linked under the gate cameras on **Overview**:
+- **Entry screen** (http://localhost:8000/arrival.html): for a display at
+  the entry gate. When a car comes in, it shows the plate and the space to park
+  in, very large, with that space highlighted on a small map of the lot. "Full"
+  and "turned away" are shown as well (never why). It goes back to the free-space
+  count after 30 s.
+- **Plate test** (http://localhost:8000/plate-test.html): reads a plate
+  written on paper with the laptop camera. It only calls `POST /plate-test/read`,
+  which records nothing and opens no barrier. With the Indian plate format, it
+  fixes look-alike characters (O/0, Z/2, S/5) by position.
 
 It starts in **demo mode**: demo vehicles, two parked cars, two weeks of
 synthetic occupancy history, and made-up plate reads when you press
@@ -58,8 +69,12 @@ server is stopped.
    `yolo11n.pt` and `license_plate_detector.pt` in the project root. The
    first switch also downloads the plate OCR model (a few MB) and warms the
    models up, which takes 10–20 s.
-2. On the **Gates** page, pick a source for a camera: a webcam, a file in `test_videos/`, or an
+2. On **Overview**, pick a source for a camera: a webcam, a demo clip, or an
    ESP32-CAM stream like `http://<ip>:81/stream` (see `firmware/camera_sensor/README.md`).
+   Only the two clips that read reliably are listed: *Car entering a garage* (plate 9MRM624)
+   for the entry gate and *Car leaving* (plate 38DMZP) for the exit gate. Their plates aren't
+   Indian, so set **Number plate format** to **Any**, and register both plates. The other clips
+   in `test_videos/` can still be played with **Other: file path**.
 3. Press **Start**. A background worker analyses frames at the chosen rate and
    logs entries and exits. Video files play at real speed; if analysis is
    slower than the video, frames are skipped rather than falling behind.
@@ -69,6 +84,9 @@ How reads become events:
   a model trained only on plates. EasyOCR is used if it isn't installed.
 - A plate must be read twice within 10 s before it counts.
 - A read that's close to a registered or parked plate snaps to it.
+- To test with a plate written on paper, set **Settings → Plates written on
+  paper** to **Read them**. The gate cameras then read text anywhere in the
+  picture, with no car in view, using EasyOCR. Turn it off at a real gate.
 - Repeat reads of the same car at the same gate are ignored for 15 s
   (configurable in Settings). This includes one-character misreads.
 - In demo mode, a running camera only shows a preview: made-up plates are
@@ -89,7 +107,7 @@ Set `SESSION_SECRET` too if you don't want restarts to sign everyone out.
 ## Barrier control
 
 When a car is let in or leaves, the backend opens that gate's barrier.
-Operators can also open it with **Open barrier** on the **Gates** page.
+Operators can also open it with **Open barrier** under the gate cameras on **Overview**.
 
 - `BARRIER_MODE=simulated` (default) only records the command.
 - `BARRIER_MODE=http` calls the relay on each gate's ESP32-CAM:
@@ -106,6 +124,10 @@ $env:BARRIER_TOKEN = "same-as-GATE_TOKEN-in-secrets.h"
 Stolen cars, blocked cars and "lot full" turn-aways show in the dashboard. To
 get them on your phone too, set a webhook (Slack, Discord, Google Chat,
 [ntfy](https://ntfy.sh), …) and/or email. Use **Send test** to check delivery.
+
+Put them in a `.env` file in the project root (it's git-ignored and loaded at
+startup; restart the server after changing it), or set them in PowerShell
+before starting:
 
 ```powershell
 $env:ALERT_WEBHOOK_URL = "https://ntfy.sh/your-private-topic"
@@ -136,6 +158,7 @@ $env:SMTP_PASSWORD = "app-password"; $env:ALERT_EMAIL_TO = "guard@example.com"
 | `BARRIER_AUTO_OPEN` | `1` | Set `0` to only open barriers by hand. |
 | `ALERT_WEBHOOK_URL` | unset | JSON POST target for alerts. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO` | unset / `587` | Email alerts (STARTTLS). |
+| `ALERT_WEBHOOK_FORMAT` | `auto` | `ntfy`, `slack`, `discord` or `json`; `auto` picks from the webhook address. |
 | `ALERT_ON` | `stolen,unauthorized,full` | Which events alert: also `unknown`, `unmatched`. |
 | `SNAPSHOT_INTERVAL_SECONDS` | `300` | How often occupancy is recorded for forecasting. |
 | `FORECAST_LSTM_WEIGHTS` | `models/forecast_lstm.pt` | Optional LSTM weights. |
@@ -190,6 +213,7 @@ history before trusting the LSTM over the baseline for your lot.
 | `GET/POST /settings` | Cooldown, reads needed, alert types; barrier and alert status |
 | `POST /auth/login\|logout`, `GET /auth/status` | Dashboard sign-in |
 | `GET/POST /models/…` | Switch detector and forecast models |
+| `POST /plate-test/read` | Read a plate from a JPEG/PNG body; changes nothing |
 
 ## Tests
 

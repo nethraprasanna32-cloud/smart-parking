@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from backend.app.services.gate_camera import VIDEO_EXTENSIONS
 from backend.app.state import cameras
 
 
@@ -33,26 +32,24 @@ def get_camera(gate):
     return cameras[gate]
 
 
+# The clips offered in the dashboard: the ones whose plates the pipeline reads
+# reliably (see docs/paper_figures/score.json). Other clips stay in
+# test_videos/ and can still be played with "Other: file path".
+DEMO_VIDEOS = [
+    {"path": "test_videos/candidates/intel_parking_lpr.mp4", "gate": "entry",
+     "label": "Car entering a garage (plate 9MRM624)"},
+    {"path": "test_videos/exit_video.mp4", "gate": "exit",
+     "label": "Car leaving (plate 38DMZP)"},
+]
+
+
 @router.get("/test-videos")
 def list_test_videos():
-    directory = os.path.join(os.getcwd(), "test_videos")
-    if not os.path.isdir(directory):
-        return {"videos": []}
-
-    videos = []
-    for root, _, filenames in os.walk(directory):
-        for filename in sorted(filenames):
-            if os.path.splitext(filename)[1].lower() not in VIDEO_EXTENSIONS:
-                continue
-            relative = os.path.relpath(os.path.join(root, filename), os.getcwd()).replace("\\", "/")
-            folder = os.path.relpath(root, directory).replace("\\", "/")
-            videos.append({
-                "filename": filename,
-                "label": filename if folder == "." else f"{folder}/{filename}",
-                "path": relative,
-            })
-
-    videos.sort(key=lambda video: video["label"])
+    videos = [
+        {**video, "filename": os.path.basename(video["path"])}
+        for video in DEMO_VIDEOS
+        if os.path.isfile(os.path.join(os.getcwd(), video["path"]))
+    ]
     return {"videos": videos}
 
 

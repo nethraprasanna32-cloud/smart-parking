@@ -121,6 +121,10 @@ class SmartParkingSystem:
         # away (members only). Registered-but-blocked and stolen cars are
         # always turned away.
         self.admit_visitors = os.getenv("ADMIT_VISITORS", "1") != "0"
+
+        # For testing with plates written on paper: read text anywhere in the
+        # frame, with no car in view. Off for real gates.
+        self.paper_plates = os.getenv("PAPER_PLATES", "0") == "1"
         self.recent_reads = {"entry": deque(), "exit": deque()}
 
         self._load_saved_settings()
@@ -134,6 +138,7 @@ class SmartParkingSystem:
         self.event_cooldown_seconds = saved("event_cooldown_seconds", self.event_cooldown_seconds)
         self.min_camera_reads = saved("min_camera_reads", self.min_camera_reads)
         self.admit_visitors = saved("admit_visitors", self.admit_visitors)
+        self.paper_plates = saved("paper_plates", self.paper_plates)
         region = saved("plate_region")
         if region:
             os.environ["PLATE_REGION"] = region
@@ -240,6 +245,7 @@ class SmartParkingSystem:
             "event_cooldown_seconds": self.event_cooldown_seconds,
             "min_camera_reads": self.min_camera_reads,
             "admit_visitors": self.admit_visitors,
+            "paper_plates": self.paper_plates,
             "plate_region": os.getenv("PLATE_REGION", "IN").upper(),
             "capacity": self.parking.capacity,
             "ocr_engine": self.alpr.alpr.ocr.engine if self.alpr.alpr else None,
@@ -248,7 +254,7 @@ class SmartParkingSystem:
         }
 
     def update_settings(self, event_cooldown_seconds=None, min_camera_reads=None, alert_kinds=None,
-                        admit_visitors=None, plate_region=None):
+                        admit_visitors=None, plate_region=None, paper_plates=None):
         if alert_kinds is not None:
             self.alerts.set_enabled(alert_kinds)
             self.database.save_setting("alert_kinds", sorted(self.alerts.enabled))
@@ -261,6 +267,9 @@ class SmartParkingSystem:
         if admit_visitors is not None:
             self.admit_visitors = bool(admit_visitors)
             self.database.save_setting("admit_visitors", self.admit_visitors)
+        if paper_plates is not None:
+            self.paper_plates = bool(paper_plates)
+            self.database.save_setting("paper_plates", self.paper_plates)
         if plate_region is not None:
             os.environ["PLATE_REGION"] = plate_region.upper()
             self.database.save_setting("plate_region", plate_region.upper())
@@ -389,13 +398,17 @@ class SmartParkingSystem:
         # first served, so one busy gate can't starve the other.
         with self.inference_lock:
             simulated = self.alpr.simulated
+            paper = self.paper_plates and not simulated
             vehicles = self.vehicle_detector.detect_vehicles(frame)
 
-            # A real plate read without a vehicle in view is almost always noise.
-            if vehicles or simulated:
+            # A real plate read without a vehicle in view is almost always
+            # noise, unless plates written on paper are being tested.
+            if vehicles or simulated or paper:
                 plates = self.alpr.recognize_plates(frame, known_plates=known_plates)
             else:
                 plates = []
+            if paper and not plates:
+                plates = self.alpr.read_paper_plate(frame)
 
         with self.lock:
             events = []

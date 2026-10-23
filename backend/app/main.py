@@ -13,6 +13,7 @@ from backend.app.routes.camera import router as camera_router
 from backend.app.routes.dashboard import router as dashboard_router
 from backend.app.routes.models import router as models_router
 from backend.app.routes.parking import router as parking_router
+from backend.app.routes.plate_test import router as plate_test_router
 from backend.app.routes.system import router as system_router
 from backend.app.routes.vehicles import router as vehicles_router
 from backend.app.services.auth import AuthMiddleware
@@ -77,6 +78,7 @@ app.include_router(models_router)
 app.include_router(camera_router)
 app.include_router(system_router)
 app.include_router(auth_router)
+app.include_router(plate_test_router)
 
 
 @app.get("/api")
@@ -99,11 +101,25 @@ def health():
     }
 
 
+class FrontendFiles(StaticFiles):
+    """Browsers must check for a newer page, script or stylesheet on every load.
+
+    Without this they guess a cache lifetime and keep running an old app.js
+    against a new index.html after an update. Unchanged files still come back
+    as a cheap 304.
+    """
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 # Mounted last so API routes take precedence over the static catch-all.
 frontend_directory = os.path.join(PROJECT_ROOT, "frontend")
 if os.path.isdir(frontend_directory):
     app.mount(
         "/",
-        StaticFiles(directory=frontend_directory, html=True),
+        FrontendFiles(directory=frontend_directory, html=True),
         name="frontend"
     )

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plate Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="screens.css">
+</head>
+<body>
+
+<header class="screen-bar">
+    <a class="brand" href="/">Smart Parking</a>
+    <span class="screen-bar-end">
+        <a href="/">Back to the dashboard</a>
+    </span>
+</header>
+
+<main>
+<section class="page">
+    <div class="page-head">
+        <h1>Plate reading test</h1>
+        <p>Write a number plate on paper in large capital letters, hold it inside the frame and press <b>Read plate</b>. This page is only for testing: nothing is saved, no car is let in and no barrier opens.</p>
+    </div>
+
+    <div class="bench">
+        <div class="card bench-camera">
+            <div class="viewfinder">
+                <video id="video" autoplay playsinline muted></video>
+                <div class="guide" aria-hidden="true"></div>
+                <p class="viewfinder-note" id="cameraNote">Starting the camera…</p>
+            </div>
+            <div class="bench-controls">
+                <button type="button" class="btn btn-primary" id="readButton" disabled>Read plate</button>
+                <label class="check">
+                    <input type="checkbox" id="keepReading" disabled>
+                    Keep reading
+                </label>
+                <label class="sr-only" for="cameraSelect">Camera</label>
+                <select id="cameraSelect" hidden></select>
+            </div>
+        </div>
+
+        <div class="card bench-result" aria-live="polite">
+            <p class="label">Read as</p>
+            <p class="bench-plate" id="resultPlate">–</p>
+            <p class="bench-verdict" id="resultVerdict">Nothing read yet.</p>
+
+            <h2 class="bench-history-title">Earlier readings</h2>
+            <ol class="bench-history" id="history">
+                <li class="hint">None yet.</li>
+            </ol>
+        </div>
+    </div>
+
+    <p class="hint">Tips: use a thick dark marker on white paper, fill most of the frame, and keep the paper flat and still. The first reading takes a few seconds while the reader loads.</p>
+</section>
+</main>
+
+<script src="plate-test.js"></script>
+</body>
+</html>

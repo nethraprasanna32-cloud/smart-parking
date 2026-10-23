@@ -39,6 +39,34 @@ def is_valid_plate(plate_number, region=None):
     return bool(pattern.match(plate_number or ""))
 
 
+# Characters OCR confuses, by what the position on the plate must hold.
+AS_DIGIT = str.maketrans("OQDIZSBGT", "000125867")
+AS_LETTER = str.maketrans("012568", "OIZSGB")
+
+
+def fix_indian_plate(plate_number):
+    """Fix look-alike characters (O/0, Z/2, S/5...) using the Indian layout.
+
+    AA 99 AAA 9999: two letters, 1-2 digits, 0-3 letters, 4 digits. Most
+    districts are written with two digits, so "MH1ZAB1234" becomes
+    "MH12AB1234". Returns the read unchanged if no layout fits.
+    """
+    length = len(plate_number or "")
+    for district in (2, 1):
+        series = length - 6 - district
+        if not 0 <= series <= 3:
+            continue
+        candidate = (
+            plate_number[:2].translate(AS_LETTER)
+            + plate_number[2:2 + district].translate(AS_DIGIT)
+            + plate_number[2 + district:length - 4].translate(AS_LETTER)
+            + plate_number[length - 4:].translate(AS_DIGIT)
+        )
+        if is_valid_plate(candidate, "IN"):
+            return candidate
+    return plate_number
+
+
 def snap_plate(plate_number, known_plates, cutoff=0.82):
     """Return the closest known plate for a slightly misread one."""
     if not plate_number or not known_plates:
@@ -270,19 +298,24 @@ class OCREngine:
         confidence = float(sum(probs) / len(probs)) if probs else 0.0
         return prediction.plate, confidence
 
-    def _read_easyocr(self, image):
+    def read_fragments(self, image):
+        """EasyOCR only: each piece of text found, as (text, confidence), in reading order."""
         results = self.reader.readtext(
             self.prepare(image),
             allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
         )
-        if not results:
-            return "", 0.0
-
         # Two-row plates come back as separate fragments: read them
         # top-to-bottom, then left-to-right.
         results.sort(key=lambda item: (item[0][0][1] // 10, item[0][0][0]))
-        text = "".join(fragment for _, fragment, _ in results)
-        confidence = min(float(conf) for _, _, conf in results)
+        return [(fragment, float(conf)) for _, fragment, conf in results]
+
+    def _read_easyocr(self, image):
+        fragments = self.read_fragments(image)
+        if not fragments:
+            return "", 0.0
+
+        text = "".join(fragment for fragment, _ in fragments)
+        confidence = min(conf for _, conf in fragments)
 
         return text, confidence
 

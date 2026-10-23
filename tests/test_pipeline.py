@@ -155,3 +155,13 @@ def test_synthetic_history_looks_like_a_real_lot():
     assert weekday_midday > 25                         # busy during office hours
     assert average(range(5), (2, 3)) < 6               # nearly empty at night
     assert average((6,), (10, 11, 15, 16)) < weekday_midday / 2   # quiet Sundays
+
+
+def test_fix_indian_plate_uses_the_layout():
+    from ai_pipeline.detect_and_ocr import fix_indian_plate
+
+    assert fix_indian_plate("MH1ZAB1234") == "MH12AB1234"
+    assert fix_indian_plate("TNO9BC4321") == "TN09BC4321"
+    assert fix_indian_plate("DL8CAF5O31") == "DL8CAF5031"
+    assert fix_indian_plate("DL8CAF5031") == "DL8CAF5031"
+    assert fix_indian_plate("HELLO") == "HELLO"

@@ -23,7 +23,7 @@
     --radius: 6px;
     --radius-sm: 4px;
     /* Header, banners and page share one left edge. */
-    --gutter: max(24px, calc((100% - 1280px) / 2 + 24px));
+    --gutter: max(24px, calc((100% - 1760px) / 2 + 24px));
     color-scheme: light;
 }
 
@@ -98,7 +98,7 @@ a { color: var(--blue); }
 }
 
 main {
-    max-width: 1280px;
+    max-width: 1760px;
     margin: 0 auto;
     padding: 24px 24px 64px;
 }
@@ -294,6 +294,15 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 
 /* --------------------------------------------------------------- overview */
 
+/* The overview on the left, the gate cameras stacked on the right. */
+.overview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+    align-items: start;
+    gap: 16px;
+}
+.overview-main, .overview-gates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+
 .overview-top {
     display: grid;
     grid-template-columns: minmax(280px, 5fr) minmax(0, 7fr);
@@ -444,7 +453,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 
 /* ------------------------------------------------------------------ gates */
 
-.gates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 
 .camera { display: flex; flex-direction: column; gap: 12px; }
 .camera .card-head { margin-bottom: 0; }
@@ -491,7 +499,7 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
     flex-wrap: wrap;
 }
 .manual-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.manual-row input { width: 180px; }
+.manual-row input { flex: 1 1 160px; min-width: 0; }
 
 /* ----------------------------------------------------------------- tables */
 
@@ -628,6 +636,11 @@ body.presenting .brand { font-size: 22px; }
 body.presenting main { max-width: none; padding: 0 40px 24px; }
 body.presenting .page:not([data-page="overview"]) { display: none !important; }
 body.presenting .page[data-page="overview"] { display: grid !important; gap: 16px; }
+/* Gate cameras stay on the right, as live views only: no controls. */
+body.presenting .overview-gates > :not(.camera),
+body.presenting .camera-form,
+body.presenting .camera-meta,
+body.presenting .open-barrier { display: none !important; }
 body.presenting .sign-number { font-size: clamp(120px, 16vh, 220px); }
 body.presenting .sign-of { font-size: 24px; }
 body.presenting .sign-status { font-size: 24px; }
@@ -654,8 +667,15 @@ body.presenting .present-bar .btn:hover, body.presenting .present-bar .btn:focus
 
 /* ------------------------------------------------------------- responsive */
 
+/* Narrower screens: the cameras move below the overview, side by side. */
+@media (max-width: 1280px) {
+    .overview-layout { grid-template-columns: minmax(0, 1fr); }
+    .overview-gates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .overview-gates > :not(.camera) { grid-column: 1 / -1; }
+}
+
 @media (max-width: 1000px) {
-    .overview-top, .overview-bottom, .gates { grid-template-columns: minmax(0, 1fr); }
+    .overview-top, .overview-bottom, .overview-gates { grid-template-columns: minmax(0, 1fr); }
     .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .figures > div:nth-child(3) { border-left: 0; }
     .figures > div:nth-child(n+3) { border-top: 1px solid var(--line); }

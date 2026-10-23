@@ -3,6 +3,7 @@ fastapi>=0.115,<1
 uvicorn[standard]>=0.30
 pydantic>=2.6
 python-multipart>=0.0.9
+python-dotenv>=1.0         # reads settings from .env
 
 # Tests
 pytest>=8

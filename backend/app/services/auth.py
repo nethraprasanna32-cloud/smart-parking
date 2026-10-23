@@ -16,7 +16,11 @@ COOKIE_NAME = "sp_session"
 SESSION_SECONDS = int(os.getenv("SESSION_HOURS", "12")) * 3600
 
 # Static files and the login endpoints must load before signing in.
-PUBLIC_PATHS = {"/", "/index.html", "/app.css", "/app.js", "/health", "/auth/login", "/auth/status", "/auth/logout"}
+PUBLIC_PATHS = {
+    "/", "/index.html", "/app.css", "/app.js", "/screens.css",
+    "/arrival.html", "/arrival.js", "/plate-test.html", "/plate-test.js",
+    "/health", "/auth/login", "/auth/status", "/auth/logout",
+}
 
 
 class Auth:

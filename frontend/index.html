@@ -15,10 +15,10 @@
     <a class="brand" href="#overview">Smart Parking</a>
     <nav class="tabs" aria-label="Pages">
         <a href="#overview" data-tab="overview">Overview</a>
-        <a href="#gates" data-tab="gates">Gates</a>
         <a href="#activity" data-tab="activity">Activity</a>
         <a href="#vehicles" data-tab="vehicles">Vehicles</a>
         <a href="#settings" data-tab="settings">Settings</a>
+        <a href="arrival.html" target="_blank" rel="noopener" title="Opens in a new tab, for a screen at the entry gate">Entry screen</a>
     </nav>
     <div class="topbar-end">
         <span class="connection" id="connection">Connecting…</span>
@@ -39,6 +39,8 @@
 
 <!-- ============================================================ Overview -->
 <section class="page" data-page="overview" aria-label="Overview">
+<div class="overview-layout">
+<div class="overview-main">
     <div class="overview-top">
         <div class="card sign" id="sign">
             <p class="sign-label">Free spaces</p>
@@ -80,19 +82,12 @@
             <ul class="latest" id="latest"></ul>
         </div>
     </div>
-</section>
+</div>
 
-<!-- =============================================================== Gates -->
-<section class="page" data-page="gates" aria-label="Gates" hidden>
-    <div class="page-head">
-        <h1>Gates</h1>
-        <p>Each gate has a camera that reads number plates and a barrier. Start a camera on a video or live feed, or press <b>Try a reading</b> for a demo plate.</p>
-    </div>
-
-    <div class="gates">
-        <article class="card camera" data-gate="entry"></article>
-        <article class="card camera" data-gate="exit"></article>
-    </div>
+<!-- Gates: cameras, barriers and recording a car by hand -->
+<aside class="overview-gates" aria-label="Gates">
+    <article class="card camera" data-gate="entry"></article>
+    <article class="card camera" data-gate="exit"></article>
     <p class="hint" id="barrierMode"></p>
 
     <form class="card manual" id="manualForm" autocomplete="off">
@@ -107,6 +102,10 @@
             <button type="submit" class="btn" name="direction" value="exit">Car went out</button>
         </div>
     </form>
+
+    <p class="hint">Drivers see their space on the <a href="arrival.html" target="_blank" rel="noopener">entry screen</a>. To try plate reading with this computer's camera, use the <a href="plate-test.html" target="_blank" rel="noopener">plate test</a>.</p>
+</aside>
+</div>
 </section>
 
 <!-- ============================================================ Activity -->
@@ -243,6 +242,19 @@
                 <select id="regionSelect">
                     <option value="IN">Indian</option>
                     <option value="ANY">Any</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting">
+            <div class="setting-text">
+                <label for="paperSelect">Plates written on paper</label>
+                <p class="hint">For testing with a homemade plate: the gate cameras read text anywhere in the picture, without a car in view. Needs Camera AI. Write big with a thick dark marker. Turn it off at a real gate.</p>
+            </div>
+            <div class="setting-control">
+                <select id="paperSelect">
+                    <option value="no">Ignore them</option>
+                    <option value="yes">Read them (testing)</option>
                 </select>
             </div>
         </div>

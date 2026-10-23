@@ -5,7 +5,7 @@
 const API = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
 const GATES = ["entry", "exit"];
 const GATE_NAMES = { entry: "Entry gate", exit: "Exit gate" };
-const PAGES = ["overview", "gates", "activity", "vehicles", "settings"];
+const PAGES = ["overview", "activity", "vehicles", "settings"];
 
 const CAMERA_STATES = {
     idle: "Camera off",
@@ -189,7 +189,10 @@ function showPage(name) {
         ? "Smart Parking"
         : `${name[0].toUpperCase() + name.slice(1)} · Smart Parking`;
     if (name === "overview") drawChart();
-    // Camera streams only download while the Gates page is open.
+    renderCameras();
+}
+
+function renderCameras() {
     if (state.cameras) for (const gate of GATES) renderCamera(gate, state.cameras[gate]);
 }
 
@@ -355,7 +358,7 @@ async function loadLatest() {
             el("time", { dateTime: event.timestamp, title: new Date(event.timestamp).toLocaleString() },
                 timeAgo(event.timestamp)),
         );
-    }) : [el("li", { class: "empty" }, "Nothing yet. Press Try a reading on the Gates page, or record a car by hand.")]));
+    }) : [el("li", { class: "empty" }, "Nothing yet. Press Try a reading on a gate camera, or record a car by hand.")]));
 }
 
 function eventQuery() {
@@ -410,7 +413,7 @@ async function loadEvents() {
         ? "No events match this search."
         : filter === "problems"
             ? "No problems. Every car was handled normally."
-            : "Nothing yet. Press Try a reading on the Gates page, or record a car by hand.";
+            : "Nothing yet. Press Try a reading on a gate camera, or record a car by hand.";
     $("feed").replaceChildren(...(rows.length ? rows
         : [el("tr", {}, el("td", { colSpan: 4 }, el("p", { class: "empty" }, emptyText)))]));
 }
@@ -527,12 +530,12 @@ function fillSourceSelects() {
         const root = cameraRoot(gate);
         const select = root.querySelector(".source-select");
         const previous = select.value;
-        const preferred = state.videos.find((video) => video.filename.startsWith(gate));
+        const preferred = state.videos.find((video) => video.gate === gate);
 
         select.replaceChildren(
             el("option", { value: "0" }, "Webcam on this computer"),
             state.videos.length
-                ? el("optgroup", { label: "Test videos" },
+                ? el("optgroup", { label: "Demo clips" },
                     ...state.videos.map((video) => el("option", { value: video.path }, video.label || video.filename)))
                 : null,
             el("option", { value: "custom" }, "Other: file path or camera address…"),
@@ -607,7 +610,7 @@ async function loadCameras() {
     } catch (error) {
         return;
     }
-    for (const gate of GATES) renderCamera(gate, state.cameras[gate]);
+    renderCameras();
 }
 
 function renderCamera(gate, status) {
@@ -629,7 +632,8 @@ function renderCamera(gate, status) {
         select.dataset.touched = "1";
     }
 
-    const visible = state.page === "gates";
+    // Camera streams only download while the Overview (where the gates are) is open.
+    const visible = state.page === "overview";
     const img = root.querySelector(".preview img");
     const wanted = !visible ? ""
         : status.running
@@ -647,6 +651,7 @@ function renderCamera(gate, status) {
 
     const parts = [];
     if (status.note) parts.push(status.note);
+    if (state.paperPlates && status.running) parts.push("reading plates on paper");
     if (status.frames_processed) parts.push(`${status.frames_processed} frames checked`);
     if (status.last_plates.length) parts.push(`last plate ${status.last_plates.join(", ")}`);
     if (status.error) parts.push(status.error);
@@ -922,6 +927,13 @@ $("visitorSelect").addEventListener("change", (event) => {
         admit ? "Cars not in the list now get a space as visitors." : "Cars not in the list are now turned away.");
 });
 
+$("paperSelect").addEventListener("change", async (event) => {
+    const paper = event.target.value === "yes";
+    await saveSetting(event.target, { paper_plates: paper },
+        paper ? "Gate cameras now read plates written on paper, with no car in view." : "Gate cameras now only read real plates on cars.");
+    await loadSystem();
+});
+
 $("regionSelect").addEventListener("change", (event) => {
     const region = event.target.value;
     saveSetting(event.target, { plate_region: region },
@@ -1005,6 +1017,11 @@ async function loadSystem() {
     if (document.activeElement !== cooldown) cooldown.value = settings.event_cooldown_seconds;
     $("visitorSelect").value = settings.admit_visitors ? "yes" : "no";
     $("regionSelect").value = settings.plate_region === "ANY" ? "ANY" : "IN";
+    $("paperSelect").value = settings.paper_plates ? "yes" : "no";
+    if (state.paperPlates !== settings.paper_plates) {
+        state.paperPlates = settings.paper_plates;
+        renderCameras();
+    }
 
     const barrier = settings.barrier;
     for (const gate of GATES) {

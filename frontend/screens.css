@@ -1,0 +1,163 @@
+/* Standalone pages: the entry screen and the plate test.
+   Loaded after app.css and uses its tokens. See DESIGN.md. */
+
+.screen-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 56px;
+    padding: 0 var(--gutter);
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+}
+.screen-bar-end { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 14px; }
+.label { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+/* ------------------------------------------------------------ entry screen */
+
+body.screen { min-height: 100vh; display: flex; flex-direction: column; }
+
+.arrival {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 40px var(--gutter) 56px;
+    text-align: center;
+    border-top: 8px solid transparent;
+}
+.arrival[data-tone="green"] { border-top-color: var(--green); }
+.arrival[data-tone="amber"] { border-top-color: var(--amber); }
+.arrival[data-tone="red"] { border-top-color: var(--red); }
+
+.arrival-plate {
+    font: 500 clamp(22px, 3.2vw, 36px) var(--mono);
+    letter-spacing: 0.06em;
+    padding: 6px 18px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+}
+.arrival-lead { font-size: clamp(20px, 2.6vw, 30px); color: var(--muted); }
+.arrival-big {
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    max-width: 18ch;
+    text-wrap: balance;
+}
+.arrival[data-tone="green"] .arrival-big {
+    font-family: var(--mono);
+    font-size: clamp(96px, 20vw, 240px);
+    line-height: 1;
+    color: var(--green);
+}
+.arrival[data-tone="amber"] .arrival-big { color: var(--amber); }
+.arrival[data-tone="red"] .arrival-big { color: var(--red); }
+.arrival-message { font-size: clamp(16px, 1.8vw, 22px); color: var(--muted); max-width: 46ch; text-wrap: balance; }
+
+.arrival-map {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 96px));
+    justify-content: center;
+    gap: 8px;
+    width: min(100%, 840px);
+}
+.arrival-map li {
+    display: grid;
+    place-items: center;
+    height: 64px;
+    font: 500 16px var(--mono);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--muted);
+}
+.arrival-map li.taken { background: var(--sunken); border-color: var(--line); color: var(--line-strong); }
+.arrival-map li.mine {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--card);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* -------------------------------------------------------------- plate test */
+
+.bench {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.viewfinder {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.viewfinder video { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Same box as GUIDE in plate-test.js. Everything outside it is dimmed. */
+.guide {
+    position: absolute;
+    left: 10%;
+    top: 30%;
+    width: 80%;
+    height: 40%;
+    border: 2px solid #fff;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
+}
+.viewfinder-note {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.bench-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+.bench-controls select { margin-left: auto; max-width: 260px; }
+.check { display: flex; align-items: center; gap: 8px; min-height: 38px; font-size: 14px; cursor: pointer; }
+
+.bench-result { display: grid; gap: 4px; }
+.bench-plate {
+    font: 500 clamp(28px, 4vw, 44px) var(--mono);
+    letter-spacing: 0.06em;
+    overflow-wrap: anywhere;
+}
+.bench-verdict { color: var(--muted); min-height: 1.5em; }
+.bench-verdict.green { color: var(--green); }
+.bench-verdict.amber { color: var(--amber); }
+.bench-verdict.red { color: var(--red); }
+
+.bench-history-title { margin-top: 20px; }
+.bench-history { list-style: none; margin: 8px 0 0; padding: 0; }
+.bench-history li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+    .bench { grid-template-columns: minmax(0, 1fr); }
+}
