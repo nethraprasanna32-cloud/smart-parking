@@ -22,7 +22,6 @@ TITLES = {
 }
 
 
-# What happened, in words, for each alert kind.
 OUTCOMES = {
     "stolen": "Reported stolen. Turned away; the barrier stayed closed.",
     "unauthorized": "Blocked from parking here. Turned away; the barrier stayed closed.",
@@ -32,7 +31,6 @@ OUTCOMES = {
     "test": "Smart Parking alerts are working.",
 }
 
-# ntfy priority, and the colour used by Discord and email (see design.md).
 SEVERITY = {
     "stolen": ("urgent", "#c0292f"),
     "unauthorized": ("high", "#c0292f"),
@@ -47,7 +45,6 @@ GATE_NAMES = {"entry": "Entry gate", "exit": "Exit gate"}
 
 
 def webhook_style(url):
-    """Which format the webhook expects, from its address (or ALERT_WEBHOOK_FORMAT)."""
     style = os.getenv("ALERT_WEBHOOK_FORMAT", "auto").lower()
     if style != "auto":
         return style
@@ -62,7 +59,6 @@ def webhook_style(url):
 
 
 def alert_details(record, event=None):
-    """The facts of an alert as (label, value) rows, shared by every channel."""
     event = event or {}
     rows = []
     if record.get("plate_number"):
@@ -78,7 +74,6 @@ def alert_details(record, event=None):
 
 
 def alert_kind(event):
-    """Which alert, if any, an occupancy event should raise."""
     if event["status"] == "entry_rejected":
         return {"STOLEN": "stolen", "UNAUTHORIZED": "unauthorized", "UNKNOWN": "unknown"}.get(
             event.get("security_status")
@@ -91,15 +86,6 @@ def alert_kind(event):
 
 
 class AlertService:
-    """Sends alerts to a webhook (Slack, Discord, ntfy, …) and/or email.
-
-    ALERT_WEBHOOK_URL   ntfy, Slack and Discord each get their own format (from the
-                        address, or set ALERT_WEBHOOK_FORMAT); anything else gets
-                        JSON {"text", "content", "title", "details", "kind", "event"}
-    SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, ALERT_EMAIL_FROM, ALERT_EMAIL_TO
-    ALERT_ON            comma list of kinds; default stolen,unauthorized,full
-    """
-
     def __init__(self):
         self.webhook_url = os.getenv("ALERT_WEBHOOK_URL")
         self.smtp_host = os.getenv("SMTP_HOST")
@@ -176,8 +162,6 @@ class AlertService:
         headers = {"Content-Type": "application/json"}
 
         if style == "ntfy":
-            # ntfy shows the body as the notification text, so it gets plain
-            # text, with the title and urgency in headers.
             body = "\n".join(f"{label}: {value}" for label, value in rows).encode()
             headers = {
                 "Content-Type": "text/plain; charset=utf-8",
@@ -201,8 +185,8 @@ class AlertService:
         else:
             summary = f"{record['title']}: {record['message']}"
             body = {
-                "text": summary,      # Slack-compatible tools, Mattermost, Google Chat
-                "content": summary,   # Discord-compatible tools
+                "text": summary,
+                "content": summary,
                 "title": record["title"],
                 "details": dict(rows),
                 "kind": record["kind"],
@@ -237,7 +221,7 @@ class AlertService:
             + "\n\nSent by Smart Parking.\n"
         )
 
-        # Inline styles only, since most mail apps drop <style>. Colours follow design.md.
+        # Inline styles only: most mail apps drop <style>.
         def value_cell(label, value):
             value = html.escape(str(value))
             if label == "Plate":

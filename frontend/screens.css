@@ -1,6 +1,3 @@
-/* Standalone pages: the entry screen and the plate test.
-   Loaded after app.css and uses its tokens. See DESIGN.md. */
-
 .screen-bar {
     display: flex;
     align-items: center;
@@ -13,8 +10,6 @@
 }
 .screen-bar-end { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 14px; }
 .label { color: var(--muted); font-size: 13px; font-weight: 500; }
-
-/* ------------------------------------------------------------ entry screen */
 
 body.screen { min-height: 100vh; display: flex; flex-direction: column; }
 
@@ -91,8 +86,6 @@ body.screen { min-height: 100vh; display: flex; flex-direction: column; }
     font-size: 20px;
     font-weight: 600;
 }
-
-/* -------------------------------------------------------------- plate test */
 
 .bench {
     display: grid;

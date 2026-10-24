@@ -1,18 +1,4 @@
-"""Occupancy forecasting.
-
-SeasonalBaseline is the default: numpy-free, works from the first snapshot and
-improves as weekday/time-of-day history builds up.
-
-LSTMForecaster is optional. It needs PyTorch and weights trained offline:
-
-    python -m ai_pipeline.forecast train --from-api http://localhost:8000
-    python -m ai_pipeline.forecast train --input history.json --epochs 300
-    python -m ai_pipeline.forecast train --synthetic --days 56
-
-Until a lot has a few weeks of real history, synthetic_history() generates
-believable data (weekday commute peaks, quieter weekends, holidays, noise) so
-the LSTM can be trained and compared against the baseline.
-"""
+"""Occupancy forecasting: seasonal baseline and optional LSTM (python -m ai_pipeline.forecast --help)."""
 
 import argparse
 import json
@@ -28,7 +14,6 @@ LSTM_WEIGHTS = os.getenv("FORECAST_LSTM_WEIGHTS", "models/forecast_lstm.pt")
 
 
 def parse_history(history):
-    """[{timestamp, occupied}] -> sorted [(datetime, float)]."""
     points = []
     for item in history or []:
         try:
@@ -43,7 +28,6 @@ def parse_history(history):
 
 
 def resample(points, step_minutes, end=None):
-    """Forward-fill irregular snapshots onto a fixed time grid."""
     if not points:
         return []
 
@@ -63,7 +47,6 @@ def resample(points, step_minutes, end=None):
         grid.append((moment, current))
         moment += step
 
-    # Keep readings newer than the last tick, otherwise the latest change is lost.
     while index < len(points) and points[index][0] <= end:
         current = points[index][1]
         index += 1
@@ -78,7 +61,6 @@ def _sigmoid(x):
 
 
 def _day_shape(hour, kind, arrive, leave):
-    """Typical fraction of the lot in use at this hour."""
     if kind == "weekday":
         inside = _sigmoid((hour - arrive) / 0.45) * (1 - _sigmoid((hour - leave) / 0.55))
         lunch = 0.12 * math.exp(-((hour - 13.0) / 0.7) ** 2)
@@ -89,13 +71,6 @@ def _day_shape(hour, kind, arrive, leave):
 
 def synthetic_history(days=56, capacity=50, step_minutes=BUCKET_MINUTES,
                       end=None, seed=None):
-    """Generate fake occupancy snapshots: [{timestamp, occupied}].
-
-    Weekdays fill up around 08:15 and empty around 17:45 with a lunch dip,
-    Saturdays peak mid-afternoon, Sundays are quiet. Each day gets its own
-    busyness and arrival/leave times, about 1 weekday in 25 is a holiday, and
-    the noise is autocorrelated like real arrivals.
-    """
     rng = random.Random(seed)
     capacity = max(1, int(capacity))
     step = timedelta(minutes=step_minutes)
@@ -169,7 +144,6 @@ class SeasonalBaseline:
         samples = same_slot_and_day if len(same_slot_and_day) >= 2 else same_slot
 
         if len(samples) >= 2:
-            # Trust the seasonal pattern more the further ahead we look.
             weight = (1 - math.exp(-horizon_minutes / 60)) * min(1.0, len(samples) / 4)
             predicted = (1 - weight) * level + weight * mean(samples)
             spread = pstdev(samples)
@@ -247,9 +221,6 @@ class LSTMForecaster:
         return self.horizon_steps * self.step_minutes
 
     def train(self, history, epochs=200, capacity=None):
-        """Learns occupancy as a fraction of capacity, so weights trained on
-        one lot size also work for another. Without a capacity, the busiest
-        value in the history is used as the scale."""
         torch = self.torch
         grid = resample(parse_history(history), self.step_minutes)
         window = self.seq_len + self.horizon_steps
@@ -333,7 +304,6 @@ def _load_history(args):
 
 
 def split_history(history, holdout_days):
-    """(older rows, last `holdout_days` of rows)."""
     points = parse_history(history)
     cutoff = points[-1][0] - timedelta(days=holdout_days)
     rows = [{"timestamp": t.isoformat(), "occupied": v} for t, v in points]
@@ -341,8 +311,6 @@ def split_history(history, holdout_days):
 
 
 def evaluate(models, history, holdout_days=7, horizon_minutes=60, capacity=None, every=2):
-    """Mean absolute error of each model over the last `holdout_days`,
-    predicting `horizon_minutes` ahead from only the data before each moment."""
     points = parse_history(history)
     cutoff = points[-1][0] - timedelta(days=holdout_days)
     horizon = timedelta(minutes=horizon_minutes)

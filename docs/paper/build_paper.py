@@ -1,13 +1,4 @@
-"""Build the project paper (docs/Smart_Parking_Paper.pdf).
-
-Layout follows a two-column journal article: full-width title block and
-abstract, balanced two-column text, full-width figures and tables between
-text blocks, numbered references.
-
-    python docs/build_paper.py
-
-Edit AUTHORS / AFFILIATION / CORRESPONDENCE below before sharing.
-"""
+"""Build the project paper: python docs/paper/build_paper.py"""
 
 import os
 
@@ -25,12 +16,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(HERE, "paper_figures")
 OUT = os.path.join(HERE, "Smart_Parking_Paper.pdf")
 
-TITLE = "A Gate-Camera Smart Parking System Using Deep-Learning Number Plate Recognition and Occupancy Forecasting"
-RUNNING_TITLE = "Gate-Camera Smart Parking System"
-AUTHORS = "Rishi Heda<super>1</super>"
-AFFILIATION = "<super>1</super>[Department], [University], [City], India"
-CORRESPONDENCE = "Correspondence should be addressed to Rishi Heda; rishiheda14@gmail.com"
-DATE_LINE = "Project report, October 2026"
+TITLE = ("Smart Parking Management System Using Modern Deep Learning, AI-Based Parking Predictions "
+         "and Automatic License Plate Recognition")
 
 PAGE_W, PAGE_H = A4
 MARGIN_X, MARGIN_TOP, MARGIN_BOTTOM = 54, 64, 56
@@ -38,7 +25,6 @@ TEXT_W = PAGE_W - 2 * MARGIN_X
 GAP = 18
 COL_W = (TEXT_W - GAP) / 2
 
-# ------------------------------------------------------------------ styles
 SERIF, SERIF_B, SERIF_I, SERIF_BI = "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic"
 
 body = ParagraphStyle("body", fontName=SERIF, fontSize=9.6, leading=11.9, alignment=TA_JUSTIFY,
@@ -70,7 +56,6 @@ def heading(text):
 
 
 def sub(title, text):
-    """Run-in subsection heading, as in the reference layout."""
     return Paragraph(f"<i>{title}</i> {text}", body_first)
 
 
@@ -126,13 +111,8 @@ def cols(*flowables):
                            leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
 
 
-# ------------------------------------------------------------------ pages
 def first_page(canvas, doc):
-    canvas.saveState()
-    canvas.setFont(SERIF, 8.5)
-    canvas.drawString(MARGIN_X, PAGE_H - 40, DATE_LINE)
-    canvas.drawString(MARGIN_X, PAGE_H - 50, "Smart Parking project documentation")
-    canvas.restoreState()
+    pass
 
 
 def later_pages(canvas, doc):
@@ -141,9 +121,7 @@ def later_pages(canvas, doc):
     y = PAGE_H - 40
     if doc.page % 2 == 0:
         canvas.drawString(MARGIN_X, y, str(doc.page))
-        canvas.drawRightString(PAGE_W - MARGIN_X, y, RUNNING_TITLE)
     else:
-        canvas.drawString(MARGIN_X, y, RUNNING_TITLE)
         canvas.drawRightString(PAGE_W - MARGIN_X, y, str(doc.page))
     canvas.restoreState()
 
@@ -167,12 +145,6 @@ story += [
     Spacer(1, 4),
     Paragraph(TITLE, ParagraphStyle("title", fontName=SERIF_B, fontSize=19, leading=23)),
     Spacer(1, 18),
-    Paragraph(AUTHORS, ParagraphStyle("authors", fontName=SERIF_B, fontSize=12, leading=15, leftIndent=40)),
-    Spacer(1, 8),
-    Paragraph(AFFILIATION, ParagraphStyle("aff", fontName=SERIF_I, fontSize=9, leading=11, leftIndent=40)),
-    Spacer(1, 10),
-    Paragraph(CORRESPONDENCE, ParagraphStyle("corr", fontName=SERIF, fontSize=9, leading=11, leftIndent=40)),
-    Spacer(1, 10),
     Paragraph(
         "Finding a free parking space wastes time and fuel, and most car parks still rely on a guard at "
         "the gate or on a sensor under every space. This report presents a smart parking system that "
@@ -352,7 +324,6 @@ algo_table = Table([[[Paragraph(line, algo) for line in algorithm_lines]]], colW
 algo_table.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.9, colors.black),
                                 ("LEFTPADDING", (0, 0), (-1, -1), 10), ("RIGHTPADDING", (0, 0), (-1, -1), 10),
                                 ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
-# Placed after Sections 3.5-3.7 so the text fills the page under the flowchart.
 algorithm_block = KeepTogether([Spacer(1, 4), algo_table,
                                 Paragraph(f"{smallcaps('Algorithm')} 1: Gate processing and access control.", caption)])
 
@@ -385,17 +356,21 @@ story.append(cols(
         "All state is kept in SQLite, which is built into Python, so the system needs no database "
         "server: registered vehicles, cars currently inside with their space numbers, every gate event, "
         "occupancy history and dashboard settings live in one file and survive restarts. Events for "
-        "stolen or blocked vehicles and for a full lot can be sent to a webhook (for example Slack, "
-        "Discord or ntfy) and by e-mail. When a dashboard password is set, every page, API call, video "
+        "stolen or blocked vehicles and for a full lot can be sent to a webhook and by e-mail, each "
+        "formatted for where it is read: a phone push notification with an urgency level for ntfy, "
+        "a formatted message for Slack and Discord, and an HTML e-mail listing the plate, gate, time "
+        "and what happened. When a dashboard password is set, every page, API call, video "
         "stream and live update requires sign-in, using an HMAC-signed session cookie; scripts can use a "
         "bearer token instead, and failed sign-ins are slowed down."),
     sub("3.7. Operator Dashboard.",
         "The dashboard is a single web page served by the backend and updated live over a WebSocket. It "
-        "has five pages, each with one job: <i>Overview</i> (free spaces, a map of the lot, key figures, "
-        "the last 24 hours and the latest events), <i>Gates</i> (the two camera views, camera controls, "
-        "barrier buttons and manual entry), <i>Activity</i> (searchable history, CSV export and a "
-        "seven-day report), <i>Vehicles</i> (the registry) and <i>Settings</i>. A presentation mode "
-        "shows the overview full-screen with larger text for a projector or a screen at the entrance. "
+        "has four pages, each with one job: <i>Overview</i> (free spaces, a map of the lot, key figures, "
+        "the last 24 hours and the latest events, with both gate cameras, their controls, the barrier "
+        "buttons and manual entry stacked in a column on the right), <i>Activity</i> (searchable "
+        "history, CSV export and a seven-day report), <i>Vehicles</i> (the registry) and "
+        "<i>Settings</i>. A presentation mode (Figure 7) shows the overview full-screen with larger "
+        "text for a projector or a screen at the entrance, keeping the live camera views but hiding "
+        "every control. A separate entry screen shows each arriving driver their space number. "
         "Colour is used only for meaning (green for free and allowed, amber for filling up, red for full, "
         "stolen or blocked), and all text uses plain words."),
     p("The advantages of the proposed system are as follows:"),
@@ -438,8 +413,8 @@ story.append(cols(
     sub("4.1. Scenario 1: Lot Full.",
         "The lot was set to eight spaces with eight cars inside, and a registered car arrived at the "
         "entry gate. Figure 3 shows the result: the sign shows 0 free spaces in red with the status "
-        "<i>Lot full</i>, every space on the map is taken, and the latest event reads <i>Turned away: "
-        "the lot was full</i>. The barrier stayed closed. While reproducing this scenario we found and "
+        "<i>Lot full</i>, every space on the map is taken, and the latest event reads <i>Turned away, "
+        "the lot was full</i>, in amber. The barrier stayed closed. While reproducing this scenario we found and "
         "fixed a defect: after reducing the capacity, a car in a space beyond the new limit disappeared "
         "from the map. Such cars are now moved into free spaces and the move is stored, so later exit "
         "events name the right space; an automated test covers this case."),
@@ -449,7 +424,8 @@ story.append(cols(
         "space, and the barrier opens in both cases. The figures row shows the cars inside, the cars "
         "that came in today, the vehicles turned away and the forecast for the next hour with its "
         "likely range. The chart shows the last 24 hours, with the forecast as a point and range "
-        "one hour ahead."),
+        "one hour ahead. The right-hand column shows both gates, each with its camera view, controls "
+        "and the last barrier opening."),
     sub("4.3. Scenario 3: Stolen and Blocked Vehicles.",
         "A vehicle reported stolen (DL8CAF5031) and a vehicle blocked from the lot (MH14XY9087) arrived "
         "at the entry gate. Both were turned away with the barrier closed, and an alert was raised for "
@@ -458,37 +434,43 @@ story.append(cols(
         "<i>Problems</i> filter or exported as CSV."),
 ))
 story.append(figure("fig_full.png", "Scenario 1: the lot is full and an arriving car is turned away.",
-                    width=TEXT_W * 0.92))
-story.append(figure("fig_overview.png", "Scenario 2: overview page during normal operation of a twelve-space lot.",
-                    width=TEXT_W * 0.74))
+                    width=TEXT_W * 0.92, max_height=320))
+story.append(figure("fig_overview.png",
+                    "Scenario 2: overview page during normal operation of a twelve-space lot, with the "
+                    "two gates in the right-hand column.", width=TEXT_W * 0.86, max_height=340))
 story.append(figure("fig_activity.png",
                     "Scenario 3 and 4: Activity page with turned-away stolen and blocked vehicles, a lot-full "
-                    "rejection, and the camera events from Scenario 4.", width=TEXT_W * 0.86))
+                    "rejection, and the camera events from Scenario 4.", width=TEXT_W * 0.86, max_height=320))
 story.append(figure("fig_gates.png",
-                    "Scenario 4: both gates analysing real footage at the same time. Vehicle boxes are blue "
-                    "and plate boxes yellow; the barrier line shows the last opening.", width=TEXT_W * 0.92))
+                    "Scenario 4: both gates analysing real footage at the same time, shown in the right-hand "
+                    "column of the overview. Vehicle boxes are blue and plate boxes yellow; the barrier "
+                    "line shows the last opening.", width=TEXT_W * 0.92, max_height=340))
+story.append(figure("fig_present.png",
+                    "Presentation mode for a projector or a screen at the entrance: the overview with "
+                    "larger text and live gate cameras, without any controls.", width=TEXT_W))
 
 story.append(cols(
     sub("4.4. Scenario 4: Real Footage at Both Gates.",
         "The detector was switched from demonstration mode to YOLO11, which loaded and warmed up the "
-        "models in 6 to 12 s. The entry camera was given the Intel parking video [22] (30.8 s, a car "
+        "models in 6 to 12 s (10.5 s in the run shown). The entry camera was given the Intel parking video [22] (30.8 s, a car "
         "with plate 9MRM624 entering a garage) and the exit camera a 11.3 s clip of a car with plate "
         "38DMZP, both at two checks per second, at the same time. Both plates were registered and "
-        "38DMZP was recorded as inside beforehand. Figure 6 shows the Gates page during the run."),
-    p("Both videos were finished 34.4 s after they were started, so the two gates kept up with real "
-      "time while sharing one CPU: the entry worker analysed 42 frames and skipped 704, and the exit "
-      "worker analysed 11 and skipped 329. The system recorded exactly two state changes: 9MRM624 "
+        "38DMZP was recorded as inside beforehand. Figure 6 shows the overview during the run, with "
+        "both camera views in its right-hand column."),
+    p("Both videos had finished within 31.5 s of being started, so the two gates kept up with real "
+      "time while sharing one CPU: the entry worker analysed 36 frames and skipped 718, and the exit "
+      "worker analysed 8 and skipped 332. The system recorded exactly two state changes: 9MRM624 "
       "entered and was given a space, and 38DMZP exited and freed its space, each opening the "
       "corresponding barrier. The entry car stayed in view for longer than the 15 s cooldown, so it was "
       "seen once more and recorded as <i>already inside</i>, which changes nothing. No false entry or "
-      "exit was recorded. The same run repeated on a separate occasion gave identical events."),
+      "exit was recorded. The same run repeated on two other occasions gave identical events."),
     sub("4.5. Plate Recognition Accuracy.",
         "To measure accuracy, frames were sampled every 0.5 s from six videos (up to 60 frames each, "
         "189 frames in total) and passed through the vehicle and plate detectors. The plate detector "
         "returned 95 boxes. Each crop was labelled by hand: 75 were readable plates (8 distinct plates), "
         "15 were plates too blurred, angled or cut off for a person to read, and 5 were not plates "
         "(for example a motorcycle badge and a sticker). Each readable crop was read by fast-plate-ocr "
-        "and by EasyOCR. Table 2 gives the results and Figure 8 shows examples."),
+        "and by EasyOCR. Table 2 gives the results and Figure 9 shows examples."),
     p("fast-plate-ocr read 78.7% of the readable crops exactly and 86.7% to within one character, with "
       "a character error rate of 6.5%. EasyOCR read only 9.3% exactly; it read the clean, large Indian "
       "plate MP04RB0693 well (7 of 8) but failed on the others, typically merging decorative text "
@@ -548,12 +530,12 @@ story.append(cols(
         "for two gates, which is more than the two checks per second needed for cars moving slowly "
         "through a barrier."),
     sub("4.7. Occupancy Forecasting.",
-        "Fifty-six days of synthetic occupancy were generated for a 50-space lot (Figure 9 shows two "
+        "Fifty-six days of synthetic occupancy were generated for a 50-space lot (Figure 10 shows two "
         "weeks). The models were trained on the first 49 days (4,685 training windows for the LSTM, 300 "
         "epochs, about 25 s on the CPU) and tested on the last 7 days, predicting from the six hours "
         "before each 15-minute step. Table 4 gives the mean absolute error. One hour ahead, the LSTM was "
         "off by 1.79 spaces on average, the seasonal baseline by 2.45 and a persistence forecast (no "
-        "change) by 4.24. Figure 10 shows that both models follow the daily pattern, and the LSTM "
+        "change) by 4.24. Figure 11 shows that both models follow the daily pattern, and the LSTM "
         "reacts faster to the morning rise and evening fall. Persistence is best at 15 minutes, because "
         "occupancy changes little in such a short time; the LSTM is trained only for the one-hour "
         "horizon used by the dashboard. These results are on synthetic data, so they show that the "

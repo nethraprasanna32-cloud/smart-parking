@@ -58,7 +58,6 @@ def test_resample_forward_fills():
 
 
 def test_baseline_learns_daily_pattern():
-    # Busy at noon, empty at night, for a week.
     start = datetime(2026, 1, 5)
     history = []
     for step in range(7 * 96):
@@ -91,8 +90,7 @@ def test_one_character_misread_is_not_a_second_car(system):
 
     first = system.handle_plate("TN09BC4321", "entry", source="camera")
     assert first["status"] == "entered"
-    assert system.handle_plate("TN09BC4351", "entry", source="camera") is None   # misread
-    # A different car typed by an operator is never merged.
+    assert system.handle_plate("TN09BC4351", "entry", source="camera") is None
     assert system.handle_plate("TN09BC4351", "entry", source="manual") is not None
 
 
@@ -132,13 +130,12 @@ def test_region_setting(monkeypatch):
 def test_camera_reads_need_consensus(system):
     system.__init__()
     assert system._confirm_read("entry", "MH12AB1234") is None
-    # A near-identical second read confirms; ties go to the earliest read.
     assert system._confirm_read("entry", "MH12AB1284") == "MH12AB1234"
     assert system._confirm_read("exit", "KA01AB0001") is None
 
 
 def test_synthetic_history_looks_like_a_real_lot():
-    end = datetime(2026, 3, 8, 23, 45)  # a Sunday night
+    end = datetime(2026, 3, 8, 23, 45)
     history = synthetic_history(days=28, capacity=40, end=end, seed=1)
     assert history == synthetic_history(days=28, capacity=40, end=end, seed=1)
     assert all(0 <= row["occupied"] <= 40 for row in history)
@@ -152,9 +149,9 @@ def test_synthetic_history_looks_like_a_real_lot():
         return sum(values) / len(values)
 
     weekday_midday = average(range(5), (10, 11, 15, 16))
-    assert weekday_midday > 25                         # busy during office hours
-    assert average(range(5), (2, 3)) < 6               # nearly empty at night
-    assert average((6,), (10, 11, 15, 16)) < weekday_midday / 2   # quiet Sundays
+    assert weekday_midday > 25
+    assert average(range(5), (2, 3)) < 6
+    assert average((6,), (10, 11, 15, 16)) < weekday_midday / 2
 
 
 def test_fix_indian_plate_uses_the_layout():

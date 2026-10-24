@@ -28,6 +28,9 @@ ai_pipeline/detect_and_ocr.py       Detectors, plate detector, OCR (fast-plate-o
 ai_pipeline/forecast.py             SeasonalBaseline, LSTMForecaster, synthetic_history(), training CLI
 frontend/                           index.html + app.css + app.js (no build step); DESIGN.md = visual rules
 firmware/camera_sensor/             ESP32-CAM: MJPEG on :81, /capture /status /open on :80
+models/                             Weights (yolo11n.pt, license_plate_detector.pt, forecast_lstm.pt); root still works
+docs/                               context.md (this file), design.md (tokens), paper/ (PDF, build scripts, figures)
+uncategorised/                      Screenshots, scratch files, unused code
 tests/                              pytest; conftest resets the shared system per test; in-memory SQLite (test_storage.py uses a real file)
 ```
 

@@ -18,8 +18,6 @@ def leave(client, plate):
     return client.post("/parking/manual", json={"plate_number": plate, "direction": "exit"})
 
 
-# ------------------------------------------------------------------- auth
-
 @pytest.fixture
 def locked(client):
     auth.password = "s3cret"
@@ -69,8 +67,6 @@ def test_forged_or_expired_tokens_fail():
     assert not auth.valid_token(f"1.{signature}")
 
 
-# ---------------------------------------------------------------- barrier
-
 def test_entry_opens_barrier_and_rejection_does_not(client, system):
     enter(client, "TN09BC4321")
     assert system.barrier.last["entry"]["plate_number"] == "TN09BC4321"
@@ -89,7 +85,7 @@ def test_manual_barrier_open(client):
 
 def test_http_barrier_reports_failure(client, system):
     system.barrier.mode = "http"
-    system.barrier.urls["entry"] = "http://127.0.0.1:9/open"  # nothing listens on port 9
+    system.barrier.urls["entry"] = "http://127.0.0.1:9/open"
     record = client.post("/barrier/entry/open").json()
     assert record["result"].startswith("failed")
 
@@ -118,11 +114,9 @@ def test_http_barrier_calls_relay(client, system):
     assert calls == [(f"/open?ms={system.barrier.open_ms}", "gate-token")]
 
 
-# ----------------------------------------------------------------- alerts
-
 def test_alerts_recorded_for_enabled_kinds(client):
-    enter(client, "DL8CAF5031")      # stolen
-    enter(client, "ZZ99ZZ9999")      # unknown: not enabled by default
+    enter(client, "DL8CAF5031")
+    enter(client, "ZZ99ZZ9999")
     kinds = [alert["kind"] for alert in client.get("/alerts").json()["recent"]]
     assert kinds == ["stolen"]
 
@@ -131,7 +125,6 @@ def test_alert_settings_and_test_endpoint(client):
     settings = client.post("/settings", json={"alert_kinds": ["unknown"]}).json()
     assert settings["alerts"]["enabled"] == ["unknown"]
     assert client.post("/settings", json={"alert_kinds": ["bogus"]}).status_code == 400
-    # No webhook or SMTP configured in tests.
     assert client.post("/alerts/test").status_code == 400
 
 
@@ -157,15 +150,11 @@ def test_webhook_delivery(client, system):
     assert "Test alert" in received[0]["text"]
 
 
-# --------------------------------------------------- settings / cooldown
-
 def test_cooldown_setting(client):
     client.post("/settings", json={"event_cooldown_seconds": 0})
     enter(client, "TN09BC4321")
     assert enter(client, "TN09BC4321").json()["status"] == "already_parked"
 
-
-# --------------------------------------------------- history / reports
 
 def test_event_search_and_paging(client):
     enter(client, "TN09BC4321")
@@ -231,7 +220,7 @@ def test_ntfy_webhook_gets_plain_text(client, system, monkeypatch):
     monkeypatch.setenv("ALERT_WEBHOOK_FORMAT", "ntfy")
     system.alerts.webhook_url = f"http://127.0.0.1:{server.server_port}/my-topic"
 
-    enter(client, "DL8CAF5031")      # stolen
+    enter(client, "DL8CAF5031")
     for _ in range(50):
         if received:
             break

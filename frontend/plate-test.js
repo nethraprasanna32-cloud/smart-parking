@@ -1,8 +1,5 @@
 "use strict";
 
-// Plate test: reads a plate from the laptop camera. Only calls
-// /plate-test/read, which never records anything or opens a gate.
-
 const API = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
 
 // The guide frame, as a share of the video: keep in sync with .guide in screens.css.
@@ -18,7 +15,7 @@ const history = [];
 
 function applyTheme() {
     let theme = "auto";
-    try { theme = localStorage.getItem("theme") || "auto"; } catch (error) { /* storage blocked */ }
+    try { theme = localStorage.getItem("theme") || "auto"; } catch (error) {}
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
 }
 
@@ -65,7 +62,6 @@ async function startCamera(deviceId) {
 }
 
 async function listCameras() {
-    // Labels are only filled in once the camera has been allowed.
     const devices = (await navigator.mediaDevices.enumerateDevices())
         .filter((device) => device.kind === "videoinput");
     const select = $("cameraSelect");
@@ -81,7 +77,6 @@ async function listCameras() {
 }
 
 function captureGuide() {
-    // Send only what's inside the frame: less to read, fewer stray words.
     const video = $("video");
     const width = video.videoWidth;
     const height = video.videoHeight;

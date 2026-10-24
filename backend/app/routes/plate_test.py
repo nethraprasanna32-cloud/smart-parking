@@ -1,13 +1,7 @@
-"""Plate-reading test bench for the webcam page.
-
-Reads text from one image and returns it. Nothing is recorded, no gate
-opens and the parking state is never touched.
-"""
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 
 from ai_pipeline.detect_and_ocr import is_valid_plate
-# EasyOCR, shared with the gates' paper-plate mode, not the gate plate model.
 from backend.app.services.alpr_service import clean_plate, get_text_reader as get_engine, text_reader_lock
 
 
@@ -39,7 +33,7 @@ def read_image(data):
 
 @router.post("/read")
 async def read_plate(request: Request):
-    """Send one JPEG/PNG as the request body; get back the text read from it."""
+    """Read the plate in one JPEG/PNG request body. Records nothing and opens no barrier."""
     data = await request.body()
     if not data:
         raise HTTPException(400, "No image was sent.")

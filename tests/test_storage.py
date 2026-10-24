@@ -1,5 +1,3 @@
-"""SQLite storage on a real file: persistence across restarts, search, reports."""
-
 from datetime import date
 
 import pytest
@@ -23,7 +21,6 @@ def file_client(client, system, db_file):
 
 
 def restart(system):
-    """Simulate a server restart: reopen the same database file."""
     system.database.close()
     system.__init__()
     system.seed_demo_data()
@@ -55,7 +52,6 @@ def test_data_and_settings_survive_restart(file_client, system):
     assert settings["event_cooldown_seconds"] == 40
     assert settings["alerts"]["enabled"] == ["stolen"]
 
-    # Demo data is only seeded on the first run: nothing was duplicated.
     assert sum(v["plate_number"] == "MH12AB1234" for v in system.database.get_all_vehicles()) == 1
 
 
@@ -69,7 +65,6 @@ def test_registry_and_entry_time_kept(file_client, system):
     ).json()
     entered_at = {v["plate_number"]: v for v in system.database.get_currently_parked()}[
         "TN09BC4321"]["entered_at"]
-    # A second insert must not overwrite the original entry time or slot.
     assert system.database.record_entry("TN09BC4321", "A04") is False
     again = {v["plate_number"]: v for v in system.database.get_currently_parked()}["TN09BC4321"]
     assert (again["entered_at"], again["slot_id"]) == (entered_at, first["slot_id"])

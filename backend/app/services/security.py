@@ -1,6 +1,4 @@
 class SecurityService:
-    """Access decisions, read straight from the vehicle registry."""
-
     def __init__(self, database):
         self.database = database
 

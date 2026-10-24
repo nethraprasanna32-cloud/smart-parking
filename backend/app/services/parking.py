@@ -16,8 +16,6 @@ class OccupancyManager:
         return [slot_name(index) for index in range(1, self.capacity + 1)]
 
     def get_slot_assignments(self, currently_parked):
-        """Map plate -> slot. Stored slots win; legacy records, and cars in slots
-        that no longer exist after the lot shrank, fill gaps in order."""
         assignments = {}
         used_slots = set()
         valid_slots = set(self.slot_ids())

@@ -12,8 +12,15 @@ smart-parking/
 |   +-- forecast.py         Seasonal baseline + optional LSTM
 +-- frontend/               Dashboard, served by the backend at / (rules in DESIGN.md)
 +-- firmware/camera_sensor/ ESP32-CAM: MJPEG stream + barrier relay
-+-- docs/                   Project paper (Smart_Parking_Paper.pdf) and build_paper.py
++-- models/                 Model weights: yolo11n.pt, license_plate_detector.pt, forecast_lstm.pt (git-ignored)
++-- docs/
+|   +-- context.md          Project notes and rules
+|   +-- design.md           Design tokens
+|   +-- paper/              Project paper (PDF), its build scripts and figures
 +-- tests/
++-- data/                   SQLite database (created on first run, git-ignored)
++-- test_videos/            Demo clips for the gate cameras (git-ignored)
++-- uncategorised/          Screenshots, scratch files and unused code kept for reference
 ```
 
 ## Run
@@ -66,7 +73,8 @@ server is stopped.
 ## Using real cameras
 
 1. In **Settings → Plate reading**, choose **Camera AI: YOLO11**. This needs
-   `yolo11n.pt` and `license_plate_detector.pt` in the project root. The
+   `yolo11n.pt` and `license_plate_detector.pt` in `models/` (the project root
+   still works too). The
    first switch also downloads the plate OCR model (a few MB) and warms the
    models up, which takes 10–20 s.
 2. On **Overview**, pick a source for a camera: a webcam, a demo clip, or an
@@ -147,8 +155,8 @@ $env:SMTP_PASSWORD = "app-password"; $env:ALERT_EMAIL_TO = "guard@example.com"
 | `PLATE_REGION` | `IN` | Plate format check: `IN` (Indian) or `ANY` (4–10 letters/digits; for foreign test footage). |
 | `OCR_ENGINE` | `auto` | `fast-plate-ocr`, `easyocr`, or `auto` (fast-plate-ocr if installed). |
 | `OCR_MODEL` | `cct-s-v2-global-model` | fast-plate-ocr model name. |
-| `DETECTOR_MODEL` | `yolo11n.pt` | Vehicle detector weights. |
-| `PLATE_MODEL_PATH` | `license_plate_detector.pt` | Plate detector weights. |
+| `DETECTOR_MODEL` | `models/yolo11n.pt` | Vehicle detector weights (falls back to `yolo11n.pt`). |
+| `PLATE_MODEL_PATH` | `models/license_plate_detector.pt` | Plate detector weights (falls back to the project root). |
 | `EVENT_COOLDOWN_SECONDS` | `15` | Ignore repeat reads of a plate at a gate for this long. |
 | `MIN_CAMERA_READS` | `2` | Reads needed before a camera plate counts. |
 | `BARRIER_MODE` | `simulated` | `simulated` or `http`. |

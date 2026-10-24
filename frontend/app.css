@@ -22,7 +22,6 @@
     --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
     --radius: 6px;
     --radius-sm: 4px;
-    /* Header, banners and page share one left edge. */
     --gutter: max(24px, calc((100% - 1760px) / 2 + 24px));
     color-scheme: light;
 }
@@ -66,8 +65,6 @@
     --red-soft: #33191b;
     color-scheme: dark;
 }
-
-/* ------------------------------------------------------------------ base */
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -124,8 +121,6 @@ main {
     margin-bottom: 16px;
     flex-wrap: wrap;
 }
-
-/* --------------------------------------------------------------- controls */
 
 input, select {
     font: inherit;
@@ -200,8 +195,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .segmented button:first-child { border-left: 0; }
 .segmented button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
 
-/* ------------------------------------------------------------------ plate */
-
 .plate {
     display: inline-block;
     font: 500 14px/1 var(--mono);
@@ -213,8 +206,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
     padding: 4px 6px 3px;
     white-space: nowrap;
 }
-
-/* --------------------------------------------------------------- top bar */
 
 .topbar {
     position: sticky;
@@ -239,7 +230,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
     letter-spacing: -0.01em;
     white-space: nowrap;
 }
-
 
 .tabs {
     display: flex;
@@ -277,8 +267,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .connection.bad { color: var(--red); font-weight: 500; }
 .clock { font: 500 14px var(--mono); color: var(--muted); }
 
-/* ---------------------------------------------------------------- banners */
-
 .banner {
     display: flex;
     align-items: center;
@@ -292,9 +280,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .banner.warn { background: var(--amber-soft); color: var(--amber); }
 .banner .btn-text { color: inherit; }
 
-/* --------------------------------------------------------------- overview */
-
-/* The overview on the left, the gate cameras stacked on the right. */
 .overview-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
@@ -355,7 +340,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .legend .series-label { color: var(--blue); font-weight: 500; }
 .legend .forecast-label { color: var(--amber); font-weight: 500; }
 
-/* Bays: painted stalls */
 .lot { display: flex; flex-direction: column; }
 .lot .hint { margin-top: auto; padding-top: 16px; }
 .bays {
@@ -388,7 +372,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .bay.taken:hover { border-width: 2px; padding: 31.5px 11.5px 15.5px; }
 .bay-time { font-size: 13px; color: var(--muted); }
 
-/* Figures row */
 .figures {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -410,7 +393,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
     gap: 16px;
 }
 
-/* Chart */
 .overview-bottom > .card { display: flex; flex-direction: column; }
 .chart { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 220px; }
 .chart svg { display: block; width: 100%; height: auto; }
@@ -423,7 +405,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .chart .forecast { stroke: var(--amber); stroke-width: 6; stroke-linecap: round; opacity: 0.3; }
 .chart .forecast-dot { fill: var(--amber); }
 
-/* Latest */
 .latest { list-style: none; margin: 0; padding: 0; }
 .latest li {
     display: grid;
@@ -438,7 +419,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .latest .where { font-size: 13px; color: var(--muted); }
 .latest time { font-size: 13px; color: var(--muted); }
 
-/* Outcome tag: coloured square and a word */
 .outcome { font-weight: 600; white-space: nowrap; }
 .outcome.green { color: var(--green); }
 .outcome.blue { color: var(--blue); }
@@ -450,9 +430,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 @keyframes fresh { from { background: var(--blue-soft); } to { background: transparent; } }
 
 .empty { color: var(--muted); padding: 16px 0; }
-
-/* ------------------------------------------------------------------ gates */
-
 
 .camera { display: flex; flex-direction: column; gap: 12px; }
 .camera .card-head { margin-bottom: 0; }
@@ -501,8 +478,6 @@ input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow
 .manual-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .manual-row input { flex: 1 1 160px; min-width: 0; }
 
-/* ----------------------------------------------------------------- tables */
-
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
 .toolbar #searchPlate { width: 170px; }
 .toolbar #exportLink { margin-left: auto; }
@@ -542,16 +517,12 @@ td .empty { padding: 8px 0; }
 .status.denied { color: var(--amber); }
 .status.stolen { color: var(--red); }
 
-/* --------------------------------------------------------------- vehicles */
-
 .register { display: grid; gap: 12px; }
 .register-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .register-row label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 .register-row label.check { display: flex; align-items: center; gap: 8px; min-height: 38px; color: var(--ink); font-size: 14px; }
 .register-row input[type="checkbox"] { min-height: 0; width: 16px; height: 16px; accent-color: var(--blue); }
 #regPlate { width: 170px; }
-
-/* --------------------------------------------------------------- settings */
 
 .settings { padding: 0 20px; }
 .setting {
@@ -576,8 +547,6 @@ td .empty { padding: 8px 0; }
 .alert-title { font-weight: 600; }
 .alert-list .failed { color: var(--red); }
 
-/* ------------------------------------------------------------------ toast */
-
 .toast {
     position: fixed;
     left: 50%;
@@ -594,8 +563,6 @@ td .empty { padding: 8px 0; }
 }
 .toast.ok { border-left: 4px solid var(--green); }
 .toast.error { border-left: 4px solid var(--red); }
-
-/* ------------------------------------------------------------------ login */
 
 .login {
     position: fixed;
@@ -621,8 +588,6 @@ td .empty { padding: 8px 0; }
 .login-error { color: var(--red); font-size: 14px; }
 .login-error:empty { display: none; }
 
-/* ---------------------------------------------------------- presentation */
-
 .present-bar { display: none; }
 
 body.presenting { font-size: 18px; }
@@ -636,7 +601,6 @@ body.presenting .brand { font-size: 22px; }
 body.presenting main { max-width: none; padding: 0 40px 24px; }
 body.presenting .page:not([data-page="overview"]) { display: none !important; }
 body.presenting .page[data-page="overview"] { display: grid !important; gap: 16px; }
-/* Gate cameras stay on the right, as live views only: no controls. */
 body.presenting .overview-gates > :not(.camera),
 body.presenting .camera-form,
 body.presenting .camera-meta,
@@ -665,9 +629,6 @@ body.presenting .present-bar .clock { font-size: 22px; color: var(--ink); }
 body.presenting .present-bar .btn { opacity: 0.5; }
 body.presenting .present-bar .btn:hover, body.presenting .present-bar .btn:focus-visible { opacity: 1; }
 
-/* ------------------------------------------------------------- responsive */
-
-/* Narrower screens: the cameras move below the overview, side by side. */
 @media (max-width: 1280px) {
     .overview-layout { grid-template-columns: minmax(0, 1fr); }
     .overview-gates { grid-template-columns: repeat(2, minmax(0, 1fr)); }

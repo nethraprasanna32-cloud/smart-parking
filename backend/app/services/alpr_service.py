@@ -11,13 +11,10 @@ from ai_pipeline.detect_and_ocr import (
 )
 
 
-# A plate written on paper is ordinary text, not a photo of a real plate, so
-# it's read with EasyOCR rather than the plate model. The plate test page and
-# the gates (in paper-plate mode) share this one reader.
+# Paper plates are plain text, so they are read with EasyOCR, not the plate model.
 _text_reader = None
 text_reader_lock = threading.Lock()
 
-# Whole camera frames are shrunk to this width before reading paper plates.
 PAPER_FRAME_WIDTH = 960
 
 
@@ -30,19 +27,12 @@ def get_text_reader():
 
 
 def clean_plate(text):
-    """Return (raw, plate): the read without spaces, and with look-alikes fixed."""
     raw = normalize_plate(text)
     plate = fix_indian_plate(raw) if os.getenv("PLATE_REGION", "IN").upper() == "IN" else raw
     return raw, plate
 
 
 def best_plate(fragments, longest_run=4):
-    """Find a plate among text fragments; a frame also holds stray words.
-
-    Tries each run of up to `longest_run` neighbouring fragments (a plate is
-    often read as "MH14" + "AB1234") and keeps the surest one that looks like
-    a plate. Returns (raw, plate, confidence) or None.
-    """
     best = None
     for start in range(len(fragments)):
         for end in range(start + 1, min(len(fragments), start + longest_run) + 1):
@@ -57,13 +47,11 @@ def best_plate(fragments, longest_run=4):
 
 
 class ALPRManager:
-
     def __init__(self):
         self.alpr = None
         self.simulated = True
 
     def configure(self, simulated=True):
-        # Build both parts before swapping so a failed load keeps the old pipeline.
         plate_detector = LicensePlateDetector(simulated=simulated)
         ocr = OCREngine(simulated=simulated)
 
@@ -83,7 +71,6 @@ class ALPRManager:
         )
 
     def read_paper_plate(self, frame, min_confidence=0.4):
-        """Read a plate written on paper anywhere in the frame; no plate box needed."""
         if frame is None or frame.size == 0:
             return []
 

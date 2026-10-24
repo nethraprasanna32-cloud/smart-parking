@@ -21,8 +21,6 @@ def is_video_file(source):
 
 
 class GateCamera:
-    """One gate's capture loop: read frames, run the pipeline, keep a preview."""
-
     def __init__(self, gate, system):
         self.gate = gate
         self.system = system
@@ -113,7 +111,6 @@ class GateCamera:
             self.state = "stopped"
 
     def process_once(self):
-        """Run the pipeline on the newest frame, or a simulated read with no source."""
         with self.lock:
             frame = self.latest_frame
         result = self.system.process_gate_frame(frame, self.gate)
@@ -131,15 +128,12 @@ class GateCamera:
         started = time.monotonic()
 
         if not file_source:
-            # Keep only the newest frame so slow analysis never builds a backlog.
             capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         try:
             while not self.stop_event.is_set():
                 if file_source:
-                    # Files follow a real-time clock: wait when ahead, and when
-                    # analysis is slower than playback, skip frames (grab()
-                    # doesn't decode) instead of falling ever further behind.
+                    # Files play in real time: wait when ahead, skip frames with grab() (no decode) when behind.
                     due = int((time.monotonic() - started) * video_fps)
                     if self.frames_read > due:
                         self.stop_event.wait((self.frames_read - due) / video_fps)
@@ -161,7 +155,6 @@ class GateCamera:
                     if file_source:
                         self.state = "finished"
                         return
-                    # Network streams drop; reconnect with capped backoff.
                     failures += 1
                     self.state = "reconnecting"
                     self.error = f"Stream read failed ({failures}x), reconnecting"
@@ -187,7 +180,7 @@ class GateCamera:
                     try:
                         result = self.system.process_gate_frame(frame, self.gate)
                         self.error = None
-                    except Exception as exc:  # keep the gate alive on a bad frame
+                    except Exception as exc:
                         result = None
                         self.error = f"{type(exc).__name__}: {exc}"
                     self._remember(frame, result)

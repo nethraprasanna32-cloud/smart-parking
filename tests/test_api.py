@@ -40,7 +40,6 @@ def test_capacity_full(client):
 
 
 def test_shrinking_the_lot_moves_cars_out_of_removed_slots(client):
-    # Seed: A01, A02 taken. Fill A03, A04, then free A01 and shrink to 3.
     client.post("/vehicles/register", json={"plate_number": "TN09ZZ1111"})
     enter(client, "TN09BC4321")
     enter(client, "TN09ZZ1111")
@@ -51,7 +50,6 @@ def test_shrinking_the_lot_moves_cars_out_of_removed_slots(client):
     shown = {s["plate_number"] for s in slots if s["plate_number"]}
     assert len(slots) == 3 and shown == {"KA01AB0001", "TN09BC4321", "TN09ZZ1111"}
 
-    # The move is stored, so the exit names the slot the car was shown in.
     moved = next(s["slot_id"] for s in slots if s["plate_number"] == "TN09ZZ1111")
     assert leave(client, "TN09ZZ1111").json()["slot_id"] == moved
 
@@ -141,4 +139,4 @@ def test_visitors_get_a_space_unless_turned_off(client):
     settings = client.post("/settings", json={"admit_visitors": False, "plate_region": "ANY"}).json()
     assert settings["admit_visitors"] is False and settings["plate_region"] == "ANY"
     assert enter(client, "TN22QQ8888").json()["status"] == "entry_rejected"
-    assert enter(client, "MH14XY9087").json()["status"] == "entry_rejected"   # blocked
+    assert enter(client, "MH14XY9087").json()["status"] == "entry_rejected"

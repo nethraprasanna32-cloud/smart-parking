@@ -12,14 +12,10 @@ VEHICLE_CLASSES = {
 }
 
 PLATE_PATTERNS = {
-    # Indian registration format, e.g. MH12AB1234, KA01A0001, DL8CAF5031.
     "IN": re.compile(r"^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{4}$"),
-    # Anything plate-shaped; use for foreign test footage.
     "ANY": re.compile(r"^[A-Z0-9]{4,10}$"),
 }
 
-# Demo reads cycle through these: one already inside, one new arrival,
-# one blocked, one already inside, one stolen.
 SIMULATED_PLATES = [
     "MH12AB1234",
     "TN09BC4321",
@@ -39,18 +35,12 @@ def is_valid_plate(plate_number, region=None):
     return bool(pattern.match(plate_number or ""))
 
 
-# Characters OCR confuses, by what the position on the plate must hold.
 AS_DIGIT = str.maketrans("OQDIZSBGT", "000125867")
 AS_LETTER = str.maketrans("012568", "OIZSGB")
 
 
 def fix_indian_plate(plate_number):
-    """Fix look-alike characters (O/0, Z/2, S/5...) using the Indian layout.
-
-    AA 99 AAA 9999: two letters, 1-2 digits, 0-3 letters, 4 digits. Most
-    districts are written with two digits, so "MH1ZAB1234" becomes
-    "MH12AB1234". Returns the read unchanged if no layout fits.
-    """
+    """Fix O/0, Z/2, S/5 look-alikes by position in the Indian layout AA 99 AAA 9999."""
     length = len(plate_number or "")
     for district in (2, 1):
         series = length - 6 - district
@@ -68,7 +58,6 @@ def fix_indian_plate(plate_number):
 
 
 def snap_plate(plate_number, known_plates, cutoff=0.82):
-    """Return the closest known plate for a slightly misread one."""
     if not plate_number or not known_plates:
         return None
     if plate_number in known_plates:
@@ -83,9 +72,16 @@ def snap_plate(plate_number, known_plates, cutoff=0.82):
     return matches[0] if matches else None
 
 
+MODELS_DIR = "models"
+
+
+def weights_path(name):
+    local = os.path.join(MODELS_DIR, name)
+    return local if os.path.isfile(local) else name
+
+
 def _require_weights(model_path):
-    # Ultralytics silently downloads unknown names, which is surprising at a
-    # gate. Only stock "*.pt" model names may be fetched; custom paths must exist.
+    # Ultralytics silently downloads unknown names; only stock names may be fetched.
     if os.path.sep in model_path or "/" in model_path:
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"Model weights not found: {model_path}")
@@ -108,7 +104,7 @@ class YOLO11VehicleDetector:
     def __init__(self, model_path=None):
         from ultralytics import YOLO
 
-        model_path = model_path or os.getenv("DETECTOR_MODEL", self.default_weights)
+        model_path = model_path or os.getenv("DETECTOR_MODEL") or weights_path(self.default_weights)
         _require_weights(model_path)
         self.model = YOLO(model_path)
 
@@ -145,7 +141,7 @@ class RTDETRVehicleDetector(YOLO11VehicleDetector):
     def __init__(self, model_path=None):
         from ultralytics import RTDETR
 
-        model_path = model_path or self.default_weights
+        model_path = model_path or weights_path(self.default_weights)
         _require_weights(model_path)
         self.model = RTDETR(model_path)
 
@@ -171,8 +167,6 @@ class VehicleDetectionManager:
                 + "."
             )
 
-        # Load first so a missing package or weights file leaves the
-        # previous detector in place.
         detector = DETECTORS[model_type]()
         self.detector = detector
         self.model_type = model_type
@@ -193,8 +187,7 @@ class LicensePlateDetector:
         if not simulated:
             from ultralytics import YOLO
 
-            model_path = model_path or os.getenv(
-                "PLATE_MODEL_PATH",
+            model_path = model_path or os.getenv("PLATE_MODEL_PATH") or weights_path(
                 "license_plate_detector.pt"
             )
             if not os.path.isfile(model_path):
@@ -239,12 +232,6 @@ def _pick_ocr_engine(requested):
 
 
 class OCREngine:
-    """Reads text from a cropped plate.
-
-    fast-plate-ocr (a model trained only on plates) is preferred; EasyOCR is
-    the fallback when it isn't installed. Set OCR_ENGINE to force one.
-    """
-
     def __init__(self, simulated=True, engine=None):
         self.simulated = simulated
         self.engine = "simulated" if simulated else _pick_ocr_engine(engine)
@@ -267,7 +254,6 @@ class OCREngine:
 
     @staticmethod
     def prepare(image):
-        """Grayscale and upscale small crops; EasyOCR struggles below ~64 px tall."""
         import cv2
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
@@ -278,7 +264,6 @@ class OCREngine:
         return gray
 
     def readtext(self, image=None):
-        """Return (text, confidence) for a cropped plate image."""
         if self.simulated:
             return next(self._simulated_plates), 0.99
 
@@ -299,13 +284,10 @@ class OCREngine:
         return prediction.plate, confidence
 
     def read_fragments(self, image):
-        """EasyOCR only: each piece of text found, as (text, confidence), in reading order."""
         results = self.reader.readtext(
             self.prepare(image),
             allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
         )
-        # Two-row plates come back as separate fragments: read them
-        # top-to-bottom, then left-to-right.
         results.sort(key=lambda item: (item[0][0][1] // 10, item[0][0][0]))
         return [(fragment, float(conf)) for _, fragment, conf in results]
 

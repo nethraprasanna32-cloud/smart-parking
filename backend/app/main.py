@@ -27,8 +27,6 @@ SNAPSHOT_INTERVAL_SECONDS = int(os.getenv("SNAPSHOT_INTERVAL_SECONDS", "300"))
 
 
 async def snapshot_loop():
-    # Event-driven snapshots alone leave gaps overnight; the forecaster wants
-    # an even series.
     while True:
         await asyncio.sleep(SNAPSHOT_INTERVAL_SECONDS)
         await run_in_threadpool(parking_system.record_snapshot)
@@ -60,8 +58,7 @@ app = FastAPI(
 
 app.add_middleware(AuthMiddleware, auth=auth)
 
-# Wildcard CORS is only acceptable while the API is open. With a password set,
-# only the dashboard's own origin (which carries the session cookie) is used.
+# Wildcard CORS only while the API is open; with a password, the dashboard is same-origin.
 if not auth.enabled:
     app.add_middleware(
         CORSMiddleware,
@@ -102,12 +99,7 @@ def health():
 
 
 class FrontendFiles(StaticFiles):
-    """Browsers must check for a newer page, script or stylesheet on every load.
-
-    Without this they guess a cache lifetime and keep running an old app.js
-    against a new index.html after an update. Unchanged files still come back
-    as a cheap 304.
-    """
+    """Make browsers revalidate frontend files so an update never mixes old and new code."""
 
     def file_response(self, *args, **kwargs):
         response = super().file_response(*args, **kwargs)

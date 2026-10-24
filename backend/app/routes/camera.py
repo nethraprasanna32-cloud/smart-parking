@@ -32,9 +32,7 @@ def get_camera(gate):
     return cameras[gate]
 
 
-# The clips offered in the dashboard: the ones whose plates the pipeline reads
-# reliably (see docs/paper_figures/score.json). Other clips stay in
-# test_videos/ and can still be played with "Other: file path".
+# Clips offered in the dashboard: the ones whose plates read reliably.
 DEMO_VIDEOS = [
     {"path": "test_videos/candidates/intel_parking_lpr.mp4", "gate": "entry",
      "label": "Car entering a garage (plate 9MRM624)"},

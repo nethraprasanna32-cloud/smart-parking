@@ -40,7 +40,6 @@ def test_standalone_pages_are_served(client):
 
 
 def test_browsers_recheck_the_dashboard_files(client):
-    # Otherwise an update leaves browsers running an old app.js on a new page.
     for path in ("/", "/app.js", "/app.css"):
         assert client.get(path).headers["cache-control"] == "no-cache", path
 
@@ -50,7 +49,6 @@ def test_paper_plate_mode_reads_without_a_car(client, system, monkeypatch):
     frame = np.full((120, 320, 3), 255, dtype=np.uint8)
     paper_read = [{"plate_text": "MH14AB1234", "raw_text": "MH14AB1234", "confidence": 0.8, "bbox": [0, 0, 320, 120]}]
 
-    # Camera AI mode with nothing found by the car and plate models.
     monkeypatch.setattr(system.alpr, "simulated", False)
     monkeypatch.setattr(system.vehicle_detector, "detect_vehicles", lambda frame: [])
     monkeypatch.setattr(system.alpr, "recognize_plates", lambda frame, known_plates=None: [])

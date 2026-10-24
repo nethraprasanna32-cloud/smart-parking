@@ -6,13 +6,11 @@ REJECTED = {"entry_rejected", "capacity_full"}
 
 
 def daily_report(database, days=7, today=None):
-    """Per-day counts, busiest moment and average stay, oldest day first."""
     today = today or date.today()
     first_day = today - timedelta(days=days - 1)
     since = first_day.isoformat()
 
-    # Stores return newest first. Reverse before the (stable) sort so events
-    # with identical timestamps stay in the order they happened.
+    # Reverse before the stable sort so events with equal timestamps keep their order.
     events = database.get_events(100000, since=since)[::-1]
     events.sort(key=lambda event: event["timestamp"])
     snapshots = database.get_occupancy_between(since)
@@ -32,7 +30,6 @@ def daily_report(database, days=7, today=None):
         for offset in range(days)
     }
 
-    # Pair each exit with the plate's most recent entry to measure stays.
     entered_at = {}
     for event in events:
         row = rows.get(event["timestamp"][:10])

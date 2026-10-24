@@ -33,7 +33,7 @@ def test_simulated_detector_only_previews_real_video(client, video):
     status = client.get("/camera/entry/status").json()
     assert status["state"] == "finished"
     assert status["frames_read"] == 30
-    assert status["frames_processed"] == 0          # never invents plates on real footage
+    assert status["frames_processed"] == 0
     assert status["has_preview"]
     assert client.get("/camera/entry/snapshot.jpg").headers["content-type"] == "image/jpeg"
     assert client.get("/events?gate=entry").json()["total"] == 0
@@ -42,7 +42,6 @@ def test_simulated_detector_only_previews_real_video(client, video):
 def test_real_pipeline_needs_two_reads_before_an_event(client, system, video, monkeypatch):
     from backend.app.state import cameras
 
-    # Stand in for YOLO + OCR: one car, one plate, every frame.
     monkeypatch.setattr(system.vehicle_detector, "detect_vehicles",
                         lambda frame: [{"type": "car", "confidence": 0.9, "bbox": [0, 0, 100, 100]}])
     monkeypatch.setattr(system.alpr, "simulated", False)
@@ -55,7 +54,6 @@ def test_real_pipeline_needs_two_reads_before_an_event(client, system, video, mo
     status = client.get("/camera/entry/status").json()
     assert status["frames_processed"] >= 2
     events = client.get("/events?gate=entry").json()["events"]
-    # Many frames, one confirmed entry thanks to consensus + cooldown.
     assert [(e["plate_number"], e["status"]) for e in events] == [("TN09BC4321", "entered")]
 
 
@@ -63,7 +61,7 @@ def test_slow_analysis_skips_frames_instead_of_falling_behind(client, system, vi
     from backend.app.state import cameras
 
     def slow_frame(frame, gate):
-        time.sleep(0.25)  # slower than the 20 fps video
+        time.sleep(0.25)
         return {"timestamp": "", "vehicles": [], "plates": [], "events": []}
 
     monkeypatch.setattr(system.alpr, "simulated", False)
@@ -75,7 +73,6 @@ def test_slow_analysis_skips_frames_instead_of_falling_behind(client, system, vi
     elapsed = time.monotonic() - started
 
     status = client.get("/camera/entry/status").json()
-    # 30 frames at 20 fps is 1.5 s of video; it must not take 30 x 0.25 s.
     assert elapsed < 4
     assert status["frames_skipped"] > 0
     assert status["frames_processed"] < 30
@@ -122,7 +119,7 @@ def test_lstm_trained_on_big_synthetic_lot_scales_to_small_lot(tmp_path):
     pytest.importorskip("torch")
     from ai_pipeline.forecast import LSTMForecaster, synthetic_history
 
-    end = datetime(2026, 3, 2, 10, 0)  # Monday morning: the lot is busy
+    end = datetime(2026, 3, 2, 10, 0)
     model = LSTMForecaster(weights_path=str(tmp_path / "x.pt"), load=False)
     model.train(synthetic_history(days=14, capacity=50, end=end, seed=3), epochs=60, capacity=50)
 

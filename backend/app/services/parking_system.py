@@ -59,11 +59,7 @@ GATE_OPEN_STATUSES = {"entered", "exited"}
 
 
 class FairLock:
-    """A lock handed to waiters in arrival order.
-
-    threading.Lock lets the releasing thread grab it straight back, so a gate
-    that loops quickly could keep the model to itself.
-    """
+    """Lock handed to waiters in arrival order, so one busy gate cannot starve the other."""
 
     def __init__(self):
         self._guard = threading.Lock()
@@ -77,7 +73,7 @@ class FairLock:
                 return self
             turn = threading.Event()
             self._waiters.append(turn)
-        turn.wait()  # ownership is handed over directly by __exit__
+        turn.wait()
         return self
 
     def __exit__(self, *exc_info):
@@ -89,10 +85,7 @@ class FairLock:
 
 
 class SmartParkingSystem:
-
     def __init__(self, capacity=4):
-        # Entry and exit workers run in separate threads; occupancy changes
-        # and model inference are serialised through this lock.
         self.lock = threading.RLock()
         self.inference_lock = FairLock()
         self.state_version = 0
@@ -112,27 +105,17 @@ class SmartParkingSystem:
         self.event_cooldown_seconds = int(os.getenv("EVENT_COOLDOWN_SECONDS", "15"))
         self.recent_events = {}
 
-        # A camera plate must be read this many times within the window
-        # before it counts, so single-frame OCR misreads never open the gate.
         self.min_camera_reads = int(os.getenv("MIN_CAMERA_READS", "2"))
         self.read_window_seconds = 10
 
-        # Cars not in the registry: let in as visitors (public lot) or turn
-        # away (members only). Registered-but-blocked and stolen cars are
-        # always turned away.
         self.admit_visitors = os.getenv("ADMIT_VISITORS", "1") != "0"
 
-        # For testing with plates written on paper: read text anywhere in the
-        # frame, with no car in view. Off for real gates.
         self.paper_plates = os.getenv("PAPER_PLATES", "0") == "1"
         self.recent_reads = {"entry": deque(), "exit": deque()}
 
         self._load_saved_settings()
 
-    # ----------------------------------------------------------------- setup
-
     def _load_saved_settings(self):
-        """Settings changed in the dashboard override the env defaults."""
         saved = self.database.get_setting
         self.parking.set_capacity(saved("capacity", self.parking.capacity))
         self.event_cooldown_seconds = saved("event_cooldown_seconds", self.event_cooldown_seconds)
@@ -147,8 +130,6 @@ class SmartParkingSystem:
             self.alerts.set_enabled(kinds)
 
     def seed_demo_data(self):
-        """First run only: demo vehicles, two parked cars and synthetic history.
-        Set DEMO_DATA=0 to start with an empty database instead."""
         if os.getenv("DEMO_DATA", "1") == "0" or not self.database.is_empty():
             return
 
@@ -166,7 +147,6 @@ class SmartParkingSystem:
         self._seed_demo_history(now)
 
     def _seed_demo_history(self, now):
-        """Two weeks of synthetic occupancy so charts and forecasts have shape."""
         capacity = max(1, self.parking.capacity)
         for row in synthetic_history(days=14, capacity=capacity, end=now, seed=7)[:-1]:
             self.database.save_occupancy_snapshot(row["occupied"], timestamp=row["timestamp"])
@@ -178,8 +158,6 @@ class SmartParkingSystem:
     def bump(self):
         self.state_version += 1
 
-    # -------------------------------------------------------------- settings
-
     def set_capacity(self, capacity):
         with self.lock:
             occupied = len(self.database.get_currently_parked())
@@ -189,8 +167,6 @@ class SmartParkingSystem:
                 )
             self.parking.set_capacity(capacity)
             self.database.save_setting("capacity", self.parking.capacity)
-            # Cars in slots that no longer exist move into free ones, so the
-            # map and later exit events name the slot the car is shown in.
             parked = self.database.get_currently_parked()
             for plate_number, slot_id in self.parking.get_slot_assignments(parked).items():
                 stored = next(v for v in parked if v["plate_number"] == plate_number)
@@ -199,7 +175,6 @@ class SmartParkingSystem:
             self.bump()
 
     def change_detection_model(self, model_type):
-        # Wait for any in-flight inference before swapping models.
         with self.inference_lock, self.lock:
             previous = self.vehicle_detector.get_current_model()
             self.vehicle_detector.change_model(model_type)
@@ -212,7 +187,6 @@ class SmartParkingSystem:
             self.bump()
 
     def _warm_up(self):
-        """Run models once on a blank frame: the first real inference is ~8 s slower."""
         if self.alpr.simulated:
             return
         try:
@@ -223,7 +197,7 @@ class SmartParkingSystem:
             self.alpr.alpr.plate_detector.detect(blank)
             self.alpr.alpr.ocr.readtext(blank[:64, :192])
         except Exception:
-            pass  # warm-up is best effort; real frames will surface real errors
+            pass
 
     def get_detection_model(self):
         return self.vehicle_detector.get_current_model()
@@ -279,8 +253,6 @@ class SmartParkingSystem:
     def check_vehicle(self, plate_number):
         return self.security.check_vehicle(plate_number)
 
-    # --------------------------------------------------------------- events
-
     def _is_duplicate_event(self, plate_number, direction, fuzzy=False):
         now = time.monotonic()
         self.recent_events = {
@@ -290,8 +262,7 @@ class SmartParkingSystem:
         }
         if (plate_number, direction) in self.recent_events:
             return True
-        # Camera reads: a one-character misread of a plate just seen at this
-        # gate is the same car, not a new one (7 chars, 1 differs = 0.857).
+        # A one-character misread of a plate just seen at this gate is the same car.
         return fuzzy and any(
             gate == direction and SequenceMatcher(None, plate, plate_number).ratio() >= 0.85
             for plate, gate in self.recent_events
@@ -301,7 +272,6 @@ class SmartParkingSystem:
         self.recent_events[(plate_number, direction)] = time.monotonic()
 
     def _confirm_read(self, gate, plate_number):
-        """Return the consensus plate once it has enough similar recent reads."""
         now = time.monotonic()
         reads = self.recent_reads[gate]
         while reads and now - reads[0][0] > self.read_window_seconds:
@@ -324,7 +294,6 @@ class SmartParkingSystem:
         return plates
 
     def handle_plate(self, plate_number, direction, source="camera", confidence=None):
-        """Apply one plate read at a gate. Returns the event, or None for a duplicate."""
         if direction not in ("entry", "exit"):
             raise ValueError("Gate direction must be entry or exit.")
 
@@ -394,15 +363,12 @@ class SmartParkingSystem:
 
         known_plates = self.known_plates()
 
-        # Models aren't thread-safe, so inference is serialised, but first come
-        # first served, so one busy gate can't starve the other.
         with self.inference_lock:
             simulated = self.alpr.simulated
             paper = self.paper_plates and not simulated
             vehicles = self.vehicle_detector.detect_vehicles(frame)
 
-            # A real plate read without a vehicle in view is almost always
-            # noise, unless plates written on paper are being tested.
+            # A plate read with no vehicle in view is almost always noise.
             if vehicles or simulated or paper:
                 plates = self.alpr.recognize_plates(frame, known_plates=known_plates)
             else:
@@ -443,8 +409,6 @@ class SmartParkingSystem:
             "events": events,
             "statistics": statistics,
         }
-
-    # -------------------------------------------------------------- summary
 
     def record_snapshot(self):
         with self.lock:

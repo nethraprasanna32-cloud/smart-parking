@@ -1,7 +1,5 @@
 "use strict";
 
-// Served by the backend at "/"; fall back to the default dev port when the
-// file is opened straight from disk.
 const API = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
 const GATES = ["entry", "exit"];
 const GATE_NAMES = { entry: "Entry gate", exit: "Exit gate" };
@@ -61,8 +59,6 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
-
-/* ------------------------------------------------------------------ helpers */
 
 function el(tag, props = {}, ...children) {
     const node = document.createElement(tag);
@@ -173,8 +169,6 @@ function localToday() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-/* ------------------------------------------------------------------- pages */
-
 function showPage(name) {
     if (!PAGES.includes(name)) name = "overview";
     state.page = name;
@@ -197,8 +191,6 @@ function renderCameras() {
 }
 
 window.addEventListener("hashchange", () => showPage(location.hash.slice(1)));
-
-/* ------------------------------------------------------------ presentation */
 
 function setPresenting(on) {
     document.body.classList.toggle("presenting", on);
@@ -225,8 +217,6 @@ document.addEventListener("keydown", (event) => {
         setPresenting(!document.body.classList.contains("presenting"));
     }
 });
-
-/* ------------------------------------------------------------------ summary */
 
 function renderSummary(summary) {
     state.summary = summary;
@@ -295,7 +285,7 @@ function renderBays(parking) {
 async function loadSummary() {
     try {
         onSummary(await api("/dashboard/summary"));
-    } catch (error) { /* the banner shows the outage */ }
+    } catch (error) {}
 }
 
 function onSummary(summary) {
@@ -311,8 +301,6 @@ function onSummary(summary) {
         loadSystem();
     }
 }
-
-/* ----------------------------------------------------------------- activity */
 
 function describe(event) {
     const where = GATE_NAMES[event.gate] || "Gate";
@@ -463,8 +451,6 @@ $("loadMore").addEventListener("click", () => {
     loadEvents();
 });
 
-/* ------------------------------------------------------------------- manual */
-
 async function logManual(plateNumber, direction, confirmText) {
     if (confirmText && !confirm(confirmText)) return;
     try {
@@ -489,8 +475,6 @@ $("manualForm").addEventListener("submit", async (event) => {
     input.value = "";
     input.focus();
 });
-
-/* ------------------------------------------------------------------ cameras */
 
 function cameraRoot(gate) {
     return document.querySelector(`.camera[data-gate="${gate}"]`);
@@ -550,7 +534,7 @@ async function loadVideos() {
     try {
         ({ videos: state.videos } = await api("/camera/test-videos"));
         fillSourceSelects();
-    } catch (error) { /* offline */ }
+    } catch (error) {}
 }
 
 async function startCamera(gate, source, fps) {
@@ -621,7 +605,6 @@ function renderCamera(gate, status) {
     badge.className = `camera-state ${status.state}`;
     root.querySelector(".stop").disabled = !status.running;
 
-    // While a camera runs, the source picker shows what it is actually playing.
     const select = root.querySelector(".source-select");
     const input = root.querySelector(".source-input");
     if (status.running && status.source && document.activeElement !== select && document.activeElement !== input) {
@@ -660,8 +643,6 @@ function renderCamera(gate, status) {
     meta.classList.toggle("error", Boolean(status.error));
 
 }
-
-/* ----------------------------------------------------------------- vehicles */
 
 async function loadVehicles() {
     let vehicles;
@@ -746,8 +727,6 @@ $("registerForm").addEventListener("submit", async (event) => {
     }
 });
 
-/* -------------------------------------------------------------------- chart */
-
 async function loadChart() {
     try {
         ({ history: state.history } = await api("/dashboard/occupancy-history?limit=2000"));
@@ -760,7 +739,7 @@ async function loadChart() {
 function drawChart() {
     const container = $("chart");
     const summary = state.summary;
-    if (!container.clientWidth) return;  // page hidden; redrawn when shown
+    if (!container.clientWidth) return;
     const now = Date.now();
     const start = now - 24 * 3600 * 1000;
     const end = now + 75 * 60 * 1000;
@@ -833,8 +812,6 @@ window.addEventListener("resize", () => {
     resizeTimer = setTimeout(drawChart, 150);
 });
 
-/* ----------------------------------------------------------------- settings */
-
 async function loadModels() {
     try {
         const models = await api("/models/");
@@ -844,7 +821,7 @@ async function loadModels() {
         };
         fill($("detectorSelect"), models.available.vehicle_detection, models.vehicle_detection, DETECTOR_LABELS);
         fill($("forecastSelect"), models.available.parking_prediction, models.parking_prediction, FORECAST_LABELS);
-    } catch (error) { /* offline */ }
+    } catch (error) {}
 }
 
 async function switchModel(kind, select) {
@@ -940,8 +917,6 @@ $("regionSelect").addEventListener("change", (event) => {
         region === "ANY" ? "Any plate format is now accepted." : "Only Indian plates are now accepted.");
 });
 
-/* -------------------------------------------------------------------- theme */
-
 function applyTheme(theme) {
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
     else document.documentElement.removeAttribute("data-theme");
@@ -950,13 +925,11 @@ function applyTheme(theme) {
 }
 
 $("themeSelect").addEventListener("change", (event) => {
-    try { localStorage.setItem("theme", event.target.value); } catch (error) { /* storage blocked */ }
+    try { localStorage.setItem("theme", event.target.value); } catch (error) {}
     applyTheme(event.target.value);
 });
 
 try { applyTheme(localStorage.getItem("theme") || "auto"); } catch (error) { applyTheme("auto"); }
-
-/* ------------------------------------------------------------------- report */
 
 function formatStay(minutes) {
     if (minutes === null || minutes === undefined) return "–";
@@ -1002,8 +975,6 @@ async function loadReport() {
     $("reportTotals").textContent =
         `${totals.entries} came in · ${totals.exits} went out · ${totals.turned_away} turned away`;
 }
-
-/* ------------------------------------------------------ barriers & alerts */
 
 async function loadSystem() {
     let settings;
@@ -1065,8 +1036,6 @@ $("testAlert").addEventListener("click", async () => {
     }
 });
 
-/* -------------------------------------------------------------------- login */
-
 let resolveLogin = null;
 
 function showLogin() {
@@ -1099,7 +1068,7 @@ $("signOutButton").addEventListener("click", async () => {
 
 $("dismissBanner").addEventListener("click", () => {
     $("openBanner").hidden = true;
-    try { sessionStorage.setItem("openBannerDismissed", "1"); } catch (error) { /* storage blocked */ }
+    try { sessionStorage.setItem("openBannerDismissed", "1"); } catch (error) {}
 });
 
 async function checkAuth() {
@@ -1107,16 +1076,14 @@ async function checkAuth() {
     try {
         status = await api("/auth/status");
     } catch (error) {
-        return;  // offline: the banner covers it, and requests retry later
+        return;
     }
     let dismissed = false;
-    try { dismissed = sessionStorage.getItem("openBannerDismissed") === "1"; } catch (error) { /* blocked */ }
+    try { dismissed = sessionStorage.getItem("openBannerDismissed") === "1"; } catch (error) {}
     $("openBanner").hidden = status.required || dismissed;
     $("accountSetting").hidden = !status.required;
     if (status.required && !status.signed_in) await showLogin();
 }
-
-/* ---------------------------------------------------------------- live feed */
 
 let pollTimer = null;
 
@@ -1134,7 +1101,6 @@ function connectSocket() {
         if (event.code === 4401 || event.code === 1008 || event.code === 403) {
             await showLogin();
         }
-        // Poll while the socket is down so the screen still updates.
         if (!pollTimer) pollTimer = setInterval(loadSummary, 5000);
         setTimeout(connectSocket, 3000);
     };
@@ -1159,7 +1125,6 @@ async function init() {
     loadCameras();
 
     setInterval(loadCameras, 2000);
-    // Refresh "parked for" and "min ago" labels even when nothing else changes.
     setInterval(() => {
         if (state.summary) renderBays(state.summary.parking);
         loadLatest();
@@ -1167,7 +1132,6 @@ async function init() {
         loadSystem();
     }, 60000);
     connectSocket();
-    // Kiosk / TV: open /?present to start in presentation mode.
     if (new URLSearchParams(location.search).has("present")) setPresenting(true);
 }
 

@@ -1,11 +1,7 @@
 "use strict";
 
-// Entry screen: a display at the entry gate that tells the arriving driver
-// which space to park in. Read-only; it never changes anything.
-
 const API = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
 
-// How long a driver's message stays up before the screen goes back to idle.
 const HOLD_MS = 30000;
 
 const $ = (id) => document.getElementById(id);
@@ -16,7 +12,7 @@ let again = false;
 
 function applyTheme() {
     let theme = "auto";
-    try { theme = localStorage.getItem("theme") || "auto"; } catch (error) { /* storage blocked */ }
+    try { theme = localStorage.getItem("theme") || "auto"; } catch (error) {}
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
 }
 
@@ -127,7 +123,6 @@ function showEvent(event, stats) {
 }
 
 async function refresh() {
-    // Collapse bursts of updates into one request at a time.
     if (refreshing) { again = true; return; }
     refreshing = true;
     try {
@@ -158,7 +153,6 @@ function connectSocket() {
     const base = API || location.origin;
     const socket = new WebSocket(base.replace(/^http/, "ws") + "/dashboard/ws");
     socket.onopen = () => { clearInterval(pollTimer); pollTimer = null; };
-    // The socket pushes a summary whenever anything changes.
     socket.onmessage = () => refresh();
     socket.onclose = () => {
         if (!pollTimer) pollTimer = setInterval(refresh, 5000);

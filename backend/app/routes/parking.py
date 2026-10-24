@@ -81,7 +81,6 @@ CSV_COLUMNS = ["timestamp", "gate", "plate_number", "status", "slot_id",
 
 
 def event_filters(gate, status, plate, since, until):
-    """Turn query params into storage filters. Dates are YYYY-MM-DD; until is inclusive."""
     try:
         since = date.fromisoformat(since).isoformat() if since else None
         until = (date.fromisoformat(until) + timedelta(days=1)).isoformat() if until else None

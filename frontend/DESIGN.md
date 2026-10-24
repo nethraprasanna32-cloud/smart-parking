@@ -12,9 +12,10 @@ Read this before changing anything in `frontend/`.
 1. **One job per page.** Each page answers one question. Anything that doesn't
    help answer it moves to another page.
    - **Overview**: "How full is the lot, and what just happened?" This is the
-     page you put on a projector.
-   - **Gates**: "Are the cameras and barriers working?" It also holds the
-     camera controls and the form for recording a car by hand.
+     page you put on a projector. A right-hand column answers "Are the cameras
+     and barriers working?": both gate cameras, their controls and the form for
+     recording a car by hand. Present mode keeps the cameras as live views and
+     hides their controls and the form.
    - **Activity**: "What happened, and when?" Search, filter, export, weekly report.
    - **Vehicles**: "Who is allowed in?" The registry.
    - **Settings**: everything you set once and then leave alone.
@@ -112,16 +113,18 @@ padding (16 px on phones), and grid gaps are 16 px.
 ## 5. Presentation mode
 
 **Present** (or the `P` key) opens the Overview full-screen and hides the tabs
-and controls. Text gets 25% bigger, and clicking a bay doesn't change
-anything. Esc or **Exit** leaves it. Design the Overview so that a stranger
+and controls. The gate cameras stay in the right-hand column with their live
+view, status and when the barrier last opened, but without source pickers,
+buttons or the hand-entry form. Text gets 25% bigger, and clicking a bay
+doesn't change anything. Esc or **Exit** leaves it. Design the Overview so that a stranger
 3 m from a projector can read the free spaces and the latest event.
 
 ## 6. Writing
 
 - Labels name things ("Number of parking spaces"), and buttons say what
   happens ("Car came in", "Open barrier").
-- Empty states say what to do next: "Nothing yet. Press Try a reading on the
-  Gates page."
+- Empty states say what to do next: "Nothing yet. Press Try a reading on a
+  gate camera."
 - Errors say what went wrong and what to try next, in one sentence.
 - Times are relative when recent ("4 min ago") and absolute otherwise. The
   exact time is in the tooltip.

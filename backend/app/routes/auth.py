@@ -32,7 +32,6 @@ async def login(request: LoginRequest, response: Response):
         return {"signed_in": True, "required": False}
 
     if not auth.check_password(request.password):
-        # Slow down password guessing.
         await asyncio.sleep(1)
         raise HTTPException(401, "Wrong password.")
 

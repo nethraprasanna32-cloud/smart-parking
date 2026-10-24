@@ -1,8 +1,4 @@
-"""Optional password protection for the dashboard and API.
-
-Set DASHBOARD_PASSWORD to turn it on. Browsers log in once and get a signed
-session cookie; scripts can send `Authorization: Bearer <password>` instead.
-"""
+"""Optional password: a signed session cookie for browsers, or Bearer <password> for scripts."""
 
 import hashlib
 import hmac
@@ -15,7 +11,6 @@ from http.cookies import SimpleCookie
 COOKIE_NAME = "sp_session"
 SESSION_SECONDS = int(os.getenv("SESSION_HOURS", "12")) * 3600
 
-# Static files and the login endpoints must load before signing in.
 PUBLIC_PATHS = {
     "/", "/index.html", "/app.css", "/app.js", "/screens.css",
     "/arrival.html", "/arrival.js", "/plate-test.html", "/plate-test.js",
@@ -53,7 +48,6 @@ class Auth:
         return hmac.compare_digest(signature, expected) and int(expires) > time.time()
 
     def request_allowed(self, headers):
-        """headers: dict of lower-case header name -> value."""
         if not self.enabled:
             return True
 

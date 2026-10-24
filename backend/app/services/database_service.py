@@ -1,9 +1,4 @@
-"""SQLite storage: vehicles, parked cars, gate events, occupancy history, settings.
-
-The database is one file (DATABASE_PATH, default data/parking.db), so data
-survives restarts with nothing to install. DATABASE_PATH=:memory: keeps
-everything in memory (used by the tests).
-"""
+"""SQLite storage in one file (DATABASE_PATH, default data/parking.db; :memory: in tests)."""
 
 import json
 import os
@@ -53,13 +48,11 @@ def _as_list(status):
 
 
 class DatabaseService:
-
     def __init__(self, path=None):
         self.path = path or os.getenv("DATABASE_PATH", DEFAULT_PATH)
         if self.path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
 
-        # One connection shared by the API threads and the camera workers.
         self.lock = threading.RLock()
         self.conn = sqlite3.connect(self.path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
@@ -68,7 +61,6 @@ class DatabaseService:
         self.conn.executescript(SCHEMA)
         self.conn.commit()
 
-        # Raw detections are noisy and short-lived; gate events are the history.
         self.detections = deque(maxlen=5000)
 
     @property
@@ -91,8 +83,6 @@ class DatabaseService:
 
     def is_empty(self):
         return not self._query("SELECT 1 FROM vehicles LIMIT 1")
-
-    # -------------------------------------------------------------- vehicles
 
     def save_vehicle(self, vehicle):
         self._write(
@@ -125,10 +115,7 @@ class DatabaseService:
             for row in self._query("SELECT data FROM vehicles ORDER BY plate_number")
         ]
 
-    # ----------------------------------------------------------- parked cars
-
     def record_entry(self, plate_number, slot_id, entered_at=None):
-        """Mark a plate as inside. Returns False if it was already inside."""
         return self._write(
             "INSERT OR IGNORE INTO currently_parked (plate_number, slot_id, entered_at) "
             "VALUES (?, ?, ?)",
@@ -156,8 +143,6 @@ class DatabaseService:
             dict(row)
             for row in self._query("SELECT * FROM currently_parked ORDER BY entered_at")
         ]
-
-    # ---------------------------------------------------------------- events
 
     def save_detection(self, detection):
         data = {**detection, "timestamp": datetime.now().isoformat()}
@@ -195,7 +180,6 @@ class DatabaseService:
 
     def get_events(self, limit=50, gate=None, status=None, plate=None,
                    since=None, until=None, offset=0):
-        """Newest first. plate matches anywhere in the number; since/until are ISO strings."""
         where, params = self._event_filter(gate, status, plate, since, until)
         rows = self._query(
             f"SELECT data FROM events{where} ORDER BY timestamp DESC, id DESC LIMIT ? OFFSET ?",
@@ -206,8 +190,6 @@ class DatabaseService:
     def count_events(self, gate=None, status=None, plate=None, since=None, until=None):
         where, params = self._event_filter(gate, status, plate, since, until)
         return self._query(f"SELECT COUNT(*) FROM events{where}", params)[0][0]
-
-    # ------------------------------------------------------------- occupancy
 
     def save_occupancy_snapshot(self, occupied, timestamp=None):
         snapshot = {
@@ -234,8 +216,6 @@ class DatabaseService:
             (max(1, int(limit)),),
         )
         return [dict(row) for row in reversed(rows)]
-
-    # -------------------------------------------------------------- settings
 
     def get_setting(self, key, default=None):
         rows = self._query("SELECT value FROM settings WHERE key = ?", (key,))

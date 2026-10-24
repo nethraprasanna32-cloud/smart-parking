@@ -5,7 +5,6 @@ MODELS = ("baseline", "lstm")
 
 
 class PredictionManager:
-
     def __init__(self, horizon_minutes=60):
         self.horizon_minutes = horizon_minutes
         self.baseline = SeasonalBaseline()
@@ -20,7 +19,6 @@ class PredictionManager:
         if model_type == "baseline":
             self.model = self.baseline
         elif self.model.name != "lstm":
-            # Raises ImportError / FileNotFoundError and keeps the current model.
             self.model = LSTMForecaster()
 
     def train(self, history, epochs=200, capacity=None):

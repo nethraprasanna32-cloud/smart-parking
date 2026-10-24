@@ -1,8 +1,7 @@
 import os
 
-# Tests never touch the real data/parking.db; set before the app is imported.
+# Keep tests away from the real data/parking.db and .env (no real alerts).
 os.environ["DATABASE_PATH"] = ":memory:"
-# Nor the real .env, so tests never send alerts to a real inbox.
 os.environ["LOAD_DOTENV"] = "0"
 
 import pytest
@@ -14,7 +13,6 @@ from backend.app.state import cameras, parking_system
 
 @pytest.fixture
 def client(monkeypatch):
-    # The plate-format setting writes PLATE_REGION; undo it after each test.
     monkeypatch.setenv("PLATE_REGION", "IN")
     # Routes hold a reference to the shared system, so reset it in place.
     for camera in cameras.values():

@@ -6,12 +6,7 @@ from urllib.request import Request, urlopen
 
 
 class BarrierController:
-    """Opens the physical gate barrier.
-
-    BARRIER_MODE=simulated (default) only records the command.
-    BARRIER_MODE=http calls BARRIER_URL_ENTRY / BARRIER_URL_EXIT, e.g. the
-    ESP32-CAM relay endpoint http://<ip>/open, with ?ms=<open time>.
-    """
+    """Opens a gate barrier. BARRIER_MODE=simulated only records; http calls the ESP32 relay."""
 
     def __init__(self):
         self.mode = os.getenv("BARRIER_MODE", "simulated").lower()

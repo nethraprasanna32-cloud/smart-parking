@@ -1,14 +1,3 @@
-// Gate camera for the smart parking backend.
-//
-// Board: AI-Thinker ESP32-CAM (OV2640). Flash one unit per lane and set
-// GATE_NAME in secrets.h to "entry" or "exit".
-//
-// Endpoints:
-//   http://<ip>:81/stream  MJPEG stream -> POST /camera/<gate>/start {"source": "http://<ip>:81/stream"}
-//   http://<ip>/capture    single JPEG
-//   http://<ip>/status     JSON: gate, uptime, RSSI, frame size, barrier state
-//   POST http://<ip>/open?ms=4000   pulse the barrier relay (header X-Gate-Token if GATE_TOKEN is set)
-//
 // The stream runs on its own server (port 81) because a stream request never
 // ends; on the same server it would block /open while the backend is watching.
 
@@ -16,9 +5,8 @@
 #include "esp_camera.h"
 #include "esp_http_server.h"
 
-#include "secrets.h"  // WIFI_SSID, WIFI_PASSWORD, GATE_NAME, GATE_TOKEN (copy secrets.example.h)
+#include "secrets.h"
 
-// AI-Thinker ESP32-CAM pin map.
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -70,10 +58,9 @@ static bool initCamera() {
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.grab_mode = CAMERA_GRAB_LATEST;  // always serve the newest frame
+  config.grab_mode = CAMERA_GRAB_LATEST;
 
   if (psramFound()) {
-    // SVGA keeps a plate readable at 3-5 m without choking WiFi.
     config.frame_size = FRAMESIZE_SVGA;
     config.jpeg_quality = 12;
     config.fb_count = 2;
@@ -94,7 +81,7 @@ static bool initCamera() {
   sensor_t *sensor = esp_camera_sensor_get();
   sensor->set_gain_ctrl(sensor, 1);
   sensor->set_exposure_ctrl(sensor, 1);
-  sensor->set_aec2(sensor, 1);  // better exposure for headlights at night
+  sensor->set_aec2(sensor, 1);
   return true;
 }
 
@@ -134,7 +121,7 @@ static esp_err_t streamHandler(httpd_req_t *req) {
     if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)fb->buf, fb->len);
     esp_camera_fb_return(fb);
 
-    if (res != ESP_OK) break;  // client went away
+    if (res != ESP_OK) break;
   }
   return res;
 }
@@ -207,7 +194,7 @@ static void startServers() {
 
 static void connectWiFi() {
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);  // sleep adds latency spikes to the stream
+  WiFi.setSleep(false);
   WiFi.setHostname(strcmp(GATE_NAME, "exit") == 0 ? "parking-exit-cam" : "parking-entry-cam");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -221,7 +208,7 @@ static void connectWiFi() {
 
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, !RELAY_ACTIVE);  // barrier closed on boot
+  digitalWrite(RELAY_PIN, !RELAY_ACTIVE);
 
   Serial.begin(115200);
   Serial.printf("Gate camera starting: %s\n", GATE_NAME);
@@ -243,7 +230,6 @@ void loop() {
     relayCloseAt = 0;
   }
 
-  // The backend reconnects on its side; here we only recover lost WiFi.
   if (millis() - lastWifiCheck > 5000) {
     lastWifiCheck = millis();
     if (WiFi.status() != WL_CONNECTED) {
